@@ -1,10 +1,11 @@
 package az.shia.azan.ui.components
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +20,7 @@ import az.shia.azan.ui.theme.GradientDarkEnd
 import az.shia.azan.ui.theme.GradientDarkMiddle
 import az.shia.azan.ui.theme.GradientDarkStart
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import az.shia.azan.utils.TimeFormatter
 import java.util.Calendar
 
@@ -83,10 +85,13 @@ fun NextPrayerCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
-            .scale(scale),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
+            containerColor = androidx.compose.ui.graphics.Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 8.dp

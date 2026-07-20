@@ -273,6 +273,6 @@ fun CategoryHeader(title: String) {
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp, top = 16.dp)
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
     )
 }
