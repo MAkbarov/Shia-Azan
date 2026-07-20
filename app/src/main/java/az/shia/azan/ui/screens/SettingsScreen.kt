@@ -1,5 +1,6 @@
 package az.shia.azan.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,21 +47,34 @@ fun SettingsScreen(
     var showAzanSoundDialog by remember { mutableStateOf(false) }
     var showReminderTimeDialog by remember { mutableStateOf(false) }
     
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val appBarGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(
+        colors = if (isDark) {
+            listOf(az.shia.azan.ui.theme.GradientDarkStart, az.shia.azan.ui.theme.GradientDarkEnd)
+        } else {
+            listOf(az.shia.azan.ui.theme.GradientStart, az.shia.azan.ui.theme.GradientEnd)
+        }
+    )
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Parametrlər") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, "Geri")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.background(appBarGradient)
+            ) {
+                TopAppBar(
+                    title = { Text("⚙️ Parametrlər") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.Default.ArrowBack, "Geri")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
-            )
+            }
         }
     ) { padding ->
         LazyColumn(

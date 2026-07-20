@@ -21,8 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import az.shia.azan.data.PrayerTime
 import androidx.compose.foundation.isSystemInDarkTheme
+import az.shia.azan.ui.theme.DialogShape
 import az.shia.azan.ui.theme.GradientStart
 import az.shia.azan.ui.theme.GradientDarkStart
+import az.shia.azan.ui.theme.PrayerIcons
 
 /**
  * Azan oxutma dialoqu
@@ -44,10 +46,11 @@ fun AzanPlayerDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(24.dp),
+            shape = DialogShape,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
-            )
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -69,11 +72,21 @@ fun AzanPlayerDialog(
                     }
                 }
                 
-                // Namaz məlumatı
-                Text(
-                    text = "🕌",
-                    style = MaterialTheme.typography.displayLarge
-                )
+                // Namaz ikonu - şüşə (glass) badge
+                Box(
+                    modifier = Modifier
+                        .size(76.dp)
+                        .clip(CircleShape)
+                        .background(primaryColor.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = PrayerIcons.getIcon(prayer.type),
+                        contentDescription = null,
+                        tint = primaryColor,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 

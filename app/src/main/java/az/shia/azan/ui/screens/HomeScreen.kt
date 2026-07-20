@@ -1,5 +1,7 @@
 package az.shia.azan.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,11 +12,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.shia.azan.data.PrayerTime
 import az.shia.azan.ui.components.NextPrayerCard
 import az.shia.azan.ui.components.PrayerTimeCard
+import az.shia.azan.ui.theme.CardShape
+import az.shia.azan.ui.theme.GradientDarkEnd
+import az.shia.azan.ui.theme.GradientDarkStart
+import az.shia.azan.ui.theme.GradientEnd
+import az.shia.azan.ui.theme.GradientStart
+import az.shia.azan.ui.theme.PillShape
 import az.shia.azan.utils.TimeFormatter
 import az.shia.azan.viewmodel.PrayerTimesViewModel
 import java.util.Calendar
@@ -43,42 +53,54 @@ fun HomeScreen(
         }
     }
     
+    val isDark = isSystemInDarkTheme()
+    val appBarGradient = Brush.horizontalGradient(
+        colors = if (isDark) {
+            listOf(GradientDarkStart, GradientDarkEnd)
+        } else {
+            listOf(GradientStart, GradientEnd)
+        }
+    )
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Şiə Azan",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = TimeFormatter.formatDate(Calendar.getInstance()),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onLocationClick) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Yer"
-                        )
-                    }
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Parametrlər"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+            Box(modifier = Modifier.background(appBarGradient)) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "🕌 Şiə Azan",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = TimeFormatter.formatDate(Calendar.getInstance()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onLocationClick) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Yer"
+                            )
+                        }
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Parametrlər"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         Box(
@@ -96,33 +118,34 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    // Şəhər məlumatı
+                    // Şəhər məlumatı - premium "pill" görünüş
                     item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                                    .padding(vertical = 12.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = PillShape
+                                    )
+                                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.LocationOn,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = selectedLocation.cityName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
@@ -138,12 +161,26 @@ fun HomeScreen(
                     
                     // Namaz vaxtları siyahısı
                     item {
-                        Text(
-                            text = "Günün Namaz Vaxtları",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
-                        )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(4.dp)
+                                    .height(22.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.primary,
+                                        androidx.compose.foundation.shape.RoundedCornerShape(2.dp)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Günün Namaz Vaxtları",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                     
                     prayerTimes?.let { times ->

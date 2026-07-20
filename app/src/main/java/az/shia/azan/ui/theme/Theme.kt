@@ -97,6 +97,7 @@ fun ShiaAzanTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = ShiaAzanShapes,
         content = content
     )
 }

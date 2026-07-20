@@ -88,7 +88,8 @@ fun AzanSoundSelectionDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(24.dp)
+            shape = az.shia.azan.ui.theme.DialogShape,
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -182,7 +183,8 @@ fun ReminderTimeDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(24.dp)
+            shape = az.shia.azan.ui.theme.DialogShape,
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
             Column(
                 modifier = Modifier
