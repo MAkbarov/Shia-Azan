@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Şiə Azan</string>
+    
+    <!-- Namaz vaxtları -->
+    <string name="fajr">Sübh</string>
+    <string name="sunrise">Günəş</string>
+    <string name="dhuhr">Zöhr</string>
+    <string name="asr">Əsr</string>
+    <string name="maghrib">Məğrib</string>
+    <string name="isha">İşa</string>
+    
+    <!-- UI elementləri -->
+    <string name="prayer_times">Namaz Vaxtları</string>
+    <string name="settings">Parametrlər</string>
+    <string name="location">Yer</string>
+    <string name="select_city">Şəhər seçin</string>
+    <string name="enable_notifications">Bildirişləri aç</string>
+    <string name="play_azan">Azan oxut</string>
+    <string name="stop_azan">Azanı dayandır</string>
+    <string name="next_prayer">Növbəti namaz</string>
+    <string name="time_remaining">Qalan vaxt</string>
+    
+    <!-- Bildirişlər -->
+    <string name="notification_channel_name">Azan Bildirişləri</string>
+    <string name="notification_channel_desc">Namaz vaxtı bildirişləri</string>
+    <string name="notification_title">Namaz vaxtıdır</string>
+    
+    <!-- İcazələr -->
+    <string name="location_permission_required">Yer məlumatı icazəsi lazımdır</string>
+    <string name="notification_permission_required">Bildiriş icazəsi lazımdır</string>
+</resources>
