@@ -17,3 +17,7 @@ gen/
 out/
 .idea/
 *.log
+
+# Public download artifact; generated APK files elsewhere remain ignored.
+!download/
+!download/*.apk

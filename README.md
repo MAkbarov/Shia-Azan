@@ -6,6 +6,16 @@
 
 **Telegram:** [t.me/De_XIV](https://t.me/De_XIV)
 
+## APK yüklə / Download APK
+
+[![XIV Azan v1.0 APK yüklə](https://img.shields.io/badge/XIV_Azan-v1.0_APK-21C4C3?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MAkbarov/Shia-Azan/raw/refs/heads/master/download/XIV-Azan-v1.0.apk)
+
+**AZ:** APK faylını birbaşa GitHub-dan yükləmək üçün yuxarıdakı düyməyə toxunun. Android quraşdırma zamanı brauzer üçün “Naməlum tətbiqləri quraşdır” icazəsi istəyə bilər.
+
+**EN:** Tap the button above to download the APK directly from GitHub. Android may ask you to allow “Install unknown apps” for your browser during installation.
+
+**SHA-256:** `697EFFE9ECC20328FC23EC91B394FE0AAC6C823FA38282829B77DC9401B814B0`
+
 [Azərbaycan dili](#azərbaycan-dili) · [English](#english)
 
 ---
