@@ -11,8 +11,8 @@ android {
         applicationId = "az.shia.azan"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -22,6 +22,11 @@ android {
 
     buildTypes {
         release {
+            // Mövcud istifadəçilərlə imza davamlılığı üçün release-i də debug
+            // açarı ilə imzalayırıq: eyni sertifikat → tətbiqdaxili yeniləmə və
+            // əl ilə quraşdırma imza yoxlamasından keçir. Release non-debuggable
+            // olduğu üçün scroll/animasiya debug-dan xeyli hamardır.
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

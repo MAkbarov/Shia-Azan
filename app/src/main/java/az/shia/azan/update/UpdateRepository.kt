@@ -140,6 +140,10 @@ internal object UpdateFailureMessages {
             message == MALFORMED_RELEASE ||
             message == NO_APK ||
             message.startsWith(HTTP_PREFIX)
+
+    /** Keçici xətalar backoff ilə təkrar cəhdə dəyər. */
+    fun isTransient(message: String): Boolean =
+        message == NETWORK || message == TIMEOUT
 }
 
 private data class SemanticVersion(

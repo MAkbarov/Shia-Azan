@@ -43,6 +43,9 @@ class PreferencesManager(private val context: Context) {
         // Arxa fon
         val BATTERY_OPT_DISABLED = booleanPreferencesKey("battery_opt_disabled")
         val AUTOMATIC_UPDATES = booleanPreferencesKey("automatic_updates")
+
+        // Yenilənmədən sonra "tətbiq yeniləndi" toast-ını göstərmək üçün
+        val LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
         
         // Daimi Bildiriş
         val ONGOING_NOTIFICATION = booleanPreferencesKey("ongoing_notification")
@@ -176,6 +179,17 @@ class PreferencesManager(private val context: Context) {
     suspend fun setAutomaticUpdatesEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[AUTOMATIC_UPDATES] = enabled
+        }
+    }
+
+    /** Son dəfə istifadəçiyə göstərilən tətbiq versionCode-u (yoxdursa null). */
+    fun getLastSeenVersionCode(): Flow<Int?> = context.dataStore.data.map { preferences ->
+        preferences[LAST_SEEN_VERSION_CODE]
+    }
+
+    suspend fun setLastSeenVersionCode(code: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_SEEN_VERSION_CODE] = code
         }
     }
     

@@ -1,6 +1,7 @@
 package az.shia.azan.update
 
 import android.content.Context
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -29,11 +30,13 @@ object UpdateScheduler {
             .build()
         val immediate = OneTimeWorkRequestBuilder<UpdateCheckWorker>()
             .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .addTag(UpdateWorkNames.TAG)
             .build()
         val periodic = PeriodicWorkRequestBuilder<UpdateCheckWorker>(12, TimeUnit.HOURS)
             .setInitialDelay(12, TimeUnit.HOURS)
             .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .addTag(UpdateWorkNames.TAG)
             .build()
 
@@ -74,6 +77,12 @@ class UpdateCheckWorker(
 
                 is UpdateCheckResult.UpToDate -> Unit
                 is UpdateCheckResult.Failure -> {
+                    // Keçici şəbəkə/timeout xətasında backoff ilə təkrar cəhd et.
+                    if (UpdateFailureMessages.isTransient(result.message) &&
+                        runAttemptCount < MAX_CHECK_ATTEMPTS
+                    ) {
+                        return Result.retry()
+                    }
                     if (UpdateFailureMessages.recommendsReleaseFallback(result.message)) {
                         UpdateNotificationHelper.showReleaseFallback(
                             applicationContext,
@@ -90,5 +99,9 @@ class UpdateCheckWorker(
             // Periodic work will check again at the next interval; never create a retry storm.
             Result.success()
         }
+    }
+
+    private companion object {
+        const val MAX_CHECK_ATTEMPTS = 5
     }
 }

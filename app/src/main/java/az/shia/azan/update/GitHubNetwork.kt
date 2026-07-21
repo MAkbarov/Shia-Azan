@@ -36,8 +36,9 @@ internal object GitHubUrlPolicy {
 
 internal object GitHubNetwork {
     private const val MAX_REDIRECTS = 5
-    private const val CONNECT_TIMEOUT_MS = 15_000
-    private const val READ_TIMEOUT_MS = 20_000
+    // Yavaş şəbəkələrdə də yenilənmə tamamlansın deyə geniş timeout-lar.
+    private const val CONNECT_TIMEOUT_MS = 30_000
+    private const val READ_TIMEOUT_MS = 120_000
     private val userAgent = "Shia-Azan-Android/${BuildConfig.VERSION_NAME}"
 
     @Throws(IOException::class)

@@ -17,12 +17,27 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn as toastFadeIn
+import androidx.compose.animation.fadeOut as toastFadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import az.shia.azan.audio.AzanPlayer
 import az.shia.azan.data.PrayerTime
@@ -40,6 +55,44 @@ import az.shia.azan.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
 private enum class AppScreen { HOME, LOCATION, SETTINGS }
+
+/** Yenilənmədən sonra 4 saniyəlik firuzəyi toast (mətn ağ). */
+@Composable
+private fun UpdatedToast(
+    version: String?,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LaunchedEffect(version) {
+        if (version != null) {
+            kotlinx.coroutines.delay(4000L)
+            onDismiss()
+        }
+    }
+    AnimatedVisibility(
+        visible = version != null,
+        enter = toastFadeIn(tween(220)),
+        exit = toastFadeOut(tween(300)),
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF21C4C3))
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
+            Text(
+                text = "Tətbiq v${version.orEmpty()} versiyasına yeniləndi",
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
 
 /** Əsas Activity. */
 class MainActivity : ComponentActivity() {
@@ -137,10 +190,13 @@ class MainActivity : ComponentActivity() {
                     currentScreen = AppScreen.HOME
                 }
 
+                val justUpdatedVersion by settingsViewModel.justUpdatedVersion.collectAsState()
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                  Box(modifier = Modifier.fillMaxSize()) {
                     AnimatedContent(
                         targetState = currentScreen,
                         modifier = Modifier.fillMaxSize(),
@@ -248,6 +304,13 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+
+                    UpdatedToast(
+                        version = justUpdatedVersion,
+                        onDismiss = settingsViewModel::clearUpdateToast,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+                  }
                 }
             }
         }

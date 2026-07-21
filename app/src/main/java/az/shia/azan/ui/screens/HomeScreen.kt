@@ -113,8 +113,8 @@ fun HomeScreen(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        titleContentColor = Color.White,
+                        actionIconContentColor = Color.White
                     )
                 )
             }

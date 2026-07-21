@@ -70,13 +70,20 @@ fun SettingsScreen(
     var showCalcMethodDialog by remember { mutableStateOf(false) }
     
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val appBarGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(
-        colors = if (isDark) {
-            listOf(az.shia.azan.ui.theme.GradientDarkStart, az.shia.azan.ui.theme.GradientDarkEnd)
-        } else {
-            listOf(az.shia.azan.ui.theme.GradientStart, az.shia.azan.ui.theme.GradientEnd)
-        }
-    )
+    val appBarGradient = remember(isDark) {
+        androidx.compose.ui.graphics.Brush.horizontalGradient(
+            colors = if (isDark) {
+                listOf(az.shia.azan.ui.theme.GradientDarkStart, az.shia.azan.ui.theme.GradientDarkEnd)
+            } else {
+                listOf(az.shia.azan.ui.theme.GradientStart, az.shia.azan.ui.theme.GradientEnd)
+            }
+        )
+    }
+    // Hicri hesablaması ICU calendar yaradır; scroll zamanı təkrar allokasiyanın
+    // qarşısını almaq üçün yalnız tarix/offset dəyişəndə hesabla.
+    val hijriFormatted = remember(currentTime, settings.hijriOffsetDays) {
+        HijriDateFormatter.format(currentTime, settings.hijriOffsetDays)
+    }
 
     Scaffold(
         topBar = {
@@ -84,16 +91,27 @@ fun SettingsScreen(
                 modifier = Modifier.background(appBarGradient)
             ) {
                 TopAppBar(
-                    title = { Text("Parametrlər") },
+                    title = {
+                        Text(
+                            text = "Parametrlər",
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.Default.ArrowBack, "Geri")
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Geri",
+                                tint = androidx.compose.ui.graphics.Color.White
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                        titleContentColor = androidx.compose.ui.graphics.Color.White,
+                        navigationIconContentColor = androidx.compose.ui.graphics.Color.White,
+                        actionIconContentColor = androidx.compose.ui.graphics.Color.White
                     )
                 )
             }
@@ -225,10 +243,7 @@ fun SettingsScreen(
             if (settings.showHijriDate) {
                 item {
                     HijriDateAdjustmentItem(
-                        formattedDate = HijriDateFormatter.format(
-                            currentTime,
-                            settings.hijriOffsetDays
-                        ),
+                        formattedDate = hijriFormatted,
                         offsetDays = settings.hijriOffsetDays,
                         onDecrease = {
                             onHijriOffsetChange(settings.hijriOffsetDays - 1)

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -51,6 +52,27 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val _updateState = MutableStateFlow(UpdateUiState())
     val updateState: StateFlow<UpdateUiState> = _updateState.asStateFlow()
+
+    // Yenilənmədən sonra bir dəfəlik "tətbiq yeniləndi" toast-ı üçün versiya adı.
+    private val _justUpdatedVersion = MutableStateFlow<String?>(null)
+    val justUpdatedVersion: StateFlow<String?> = _justUpdatedVersion.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val storedVersionCode = preferencesManager.getLastSeenVersionCode().first()
+            val currentVersionCode = BuildConfig.VERSION_CODE
+            if (storedVersionCode != null && storedVersionCode < currentVersionCode) {
+                _justUpdatedVersion.value = BuildConfig.VERSION_NAME
+            }
+            if (storedVersionCode != currentVersionCode) {
+                preferencesManager.setLastSeenVersionCode(currentVersionCode)
+            }
+        }
+    }
+
+    fun clearUpdateToast() {
+        _justUpdatedVersion.value = null
+    }
 
     fun togglePrayerNotification(prayerType: PrayerType, enabled: Boolean) {
         viewModelScope.launch { preferencesManager.setPrayerNotification(prayerType, enabled) }

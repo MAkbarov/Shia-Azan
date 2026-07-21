@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.system.Os
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -14,6 +15,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -54,6 +56,11 @@ object UpdateDownloader {
                 Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build()
+            )
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                30_000L,
+                TimeUnit.MILLISECONDS
             )
             .addTag(UpdateWorkNames.TAG)
             .build()
@@ -97,16 +104,31 @@ class UpdateDownloadWorker(
         } catch (cancelled: CancellationException) {
             temporaryFile?.delete()
             throw cancelled
-        } catch (error: Exception) {
+        } catch (security: SecurityException) {
+            // İmza/paket uyğunsuzluğu təkrar cəhdlə düzəlməz; dərhal fallback göstər.
             temporaryFile?.delete()
             UpdateNotificationHelper.showDownloadFailure(
                 applicationContext,
-                error.message ?: "APK endirilə və ya yoxlanıla bilmədi.",
+                security.message ?: "APK təhlükəsizlik yoxlamasından keçmədi.",
                 info.releaseUrl
             )
-            Result.failure(
-                workDataOf("error" to (error.message ?: "Update download failed").take(500))
-            )
+            Result.failure()
+        } catch (error: Exception) {
+            temporaryFile?.delete()
+            // Şəbəkə/timeout kimi keçici xətalarda backoff ilə təkrar cəhd et ki,
+            // yenilənmə nəticədə uğurla tamamlansın.
+            if (runAttemptCount < MAX_ATTEMPTS) {
+                Result.retry()
+            } else {
+                UpdateNotificationHelper.showDownloadFailure(
+                    applicationContext,
+                    "Yeniləmə endirilə bilmədi. GitHub-dan əl ilə endirin.",
+                    info.releaseUrl
+                )
+                Result.failure(
+                    workDataOf("error" to (error.message ?: "Update download failed").take(500))
+                )
+            }
         }
     }
 
@@ -189,8 +211,11 @@ class UpdateDownloadWorker(
                     fileOutput.fd.sync()
                 }
             }
-            if (total <= 0L || (declaredLength >= 0L && total != declaredLength)) {
-                throw IOException("APK natamam endirildi.")
+            // Content-Length bəzən yanlış/olmaya bilər; bütövlüyü aşağıdakı
+            // PackageManager/imza yoxlaması təmin edir, ona görə burada yalnız
+            // tamam boş cavabı rədd edirik.
+            if (total <= 0L) {
+                throw IOException("APK məzmunu boş endirildi.")
             }
         } finally {
             connection.disconnect()
@@ -199,6 +224,7 @@ class UpdateDownloadWorker(
 
     private companion object {
         const val MAX_APK_BYTES = 512L * 1024L * 1024L
+        const val MAX_ATTEMPTS = 5
     }
 }
 
