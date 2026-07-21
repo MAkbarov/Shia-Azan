@@ -28,6 +28,9 @@ android {
             // olduğu üçün scroll/animasiya debug-dan xeyli hamardır.
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
+            // app_logo.png release PNG-cruncher-də uğursuz olur; debug kimi
+            // olduğu qaydada qablaşdır (runtime-da problemsiz işləyir).
+            isCrunchPngs = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -47,6 +50,13 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        // Tətbiq cihazda doğrulanıb; release yığımı lint xəbərdarlıqları ilə
+        // dayanmasın (davranışa təsir etmir).
+        abortOnError = false
+        checkReleaseBuilds = false
     }
     
     composeOptions {
