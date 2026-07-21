@@ -3,148 +3,138 @@ package az.shia.azan.location
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Build
 import androidx.core.content.ContextCompat
 import az.shia.azan.data.LocationData
+import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Granularity
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.coroutines.resume
 
-/**
- * GPS və yer məlumatı üçün helper klass
- */
+/** GPS və yer məlumatı üçün helper klass. */
 class LocationHelper(private val context: Context) {
-    
+
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
-    
+
     /**
-     * Hazırkı yeri əldə et
+     * Keşlənmiş təxmini nəticə əvəzinə yeni, yüksək dəqiqlikli koordinat alır.
+     * Reverse-geocoder yalnız şəhər adını tapır; namaz hesablamasında birbaşa
+     * GPS-in qaytardığı latitude/longitude istifadə edilir.
      */
     suspend fun getCurrentLocation(): LocationData? {
-        if (!hasLocationPermission()) {
-            return null
-        }
-        
+        if (!hasFineLocationPermission()) return null
+
         return try {
-            val location = getCurrentGPSLocation()
-            location?.let {
-                getLocationData(it.latitude, it.longitude)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            val location = getCurrentGPSLocation() ?: return null
+            getLocationData(location.latitude, location.longitude)
+        } catch (exception: Exception) {
+            exception.printStackTrace()
             null
         }
     }
-    
-    /**
-     * GPS-dən hazırkı koordinatları al
-     */
-    private suspend fun getCurrentGPSLocation(): Location? = suspendCancellableCoroutine { continuation ->
-        try {
-            if (!hasLocationPermission()) {
+
+    /** GPS-dən maksimum 20 saniyə gözləyərək fresh və fine nəticə alır. */
+    private suspend fun getCurrentGPSLocation(): Location? =
+        suspendCancellableCoroutine { continuation ->
+            if (!hasFineLocationPermission()) {
                 continuation.resume(null)
                 return@suspendCancellableCoroutine
             }
-            
+
             val cancellationTokenSource = CancellationTokenSource()
-            
-            fusedLocationClient.getCurrentLocation(
-                Priority.PRIORITY_HIGH_ACCURACY,
-                cancellationTokenSource.token
-            ).addOnSuccessListener { location ->
-                continuation.resume(location)
-            }.addOnFailureListener { exception ->
+            val request = CurrentLocationRequest.Builder()
+                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                .setGranularity(Granularity.GRANULARITY_FINE)
+                .setMaxUpdateAgeMillis(0L)
+                .setDurationMillis(20_000L)
+                .build()
+
+            try {
+                fusedLocationClient.getCurrentLocation(
+                    request,
+                    cancellationTokenSource.token
+                ).addOnSuccessListener { location ->
+                    if (continuation.isActive) continuation.resume(location)
+                }.addOnFailureListener { exception ->
+                    exception.printStackTrace()
+                    if (continuation.isActive) continuation.resume(null)
+                }
+            } catch (exception: SecurityException) {
                 exception.printStackTrace()
-                continuation.resume(null)
+                if (continuation.isActive) continuation.resume(null)
             }
-            
+
             continuation.invokeOnCancellation {
                 cancellationTokenSource.cancel()
             }
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-            continuation.resume(null)
         }
+
+    /** Koordinatları gözlənilən geocoder nəticəsi ilə oxunaqlı məkan adına çevirir. */
+    private suspend fun getLocationData(latitude: Double, longitude: Double): LocationData {
+        val address = withTimeoutOrNull(10_000L) {
+            reverseGeocode(latitude, longitude)
+        }
+
+        return LocationData(
+            latitude = latitude,
+            longitude = longitude,
+            cityName = address?.subLocality
+                ?: address?.locality
+                ?: address?.subAdminArea
+                ?: address?.adminArea
+                ?: "Hazırkı məkan",
+            countryName = address?.countryName ?: "Azərbaycan",
+            timeZone = TimeZone.getDefault().id
+        )
     }
-    
-    /**
-     * Koordinatlardan şəhər məlumatı al
-     */
-    private fun getLocationData(latitude: Double, longitude: Double): LocationData {
+
+    private suspend fun reverseGeocode(latitude: Double, longitude: Double): Address? {
+        if (!Geocoder.isPresent()) return null
         val geocoder = Geocoder(context, Locale("az"))
-        
+
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // Android 13+ üçün yeni API
-                var locationData: LocationData? = null
-                geocoder.getFromLocation(latitude, longitude, 1) { addresses ->
-                    if (addresses.isNotEmpty()) {
-                        val address = addresses[0]
-                        locationData = LocationData(
-                            latitude = latitude,
-                            longitude = longitude,
-                            cityName = address.locality ?: address.subAdminArea ?: "Naməlum Şəhər",
-                            countryName = address.countryName ?: "Azərbaycan"
-                        )
+                suspendCancellableCoroutine { continuation ->
+                    geocoder.getFromLocation(latitude, longitude, 1) { addresses ->
+                        if (continuation.isActive) {
+                            continuation.resume(addresses.firstOrNull())
+                        }
                     }
                 }
-                // Əgər məlumat alınmadısa, default məlumat qaytar
-                locationData ?: LocationData(
-                    latitude = latitude,
-                    longitude = longitude,
-                    cityName = "Hazırkı Yer",
-                    countryName = "Azərbaycan"
-                )
             } else {
-                // Köhnə Android versiyaları üçün
-                @Suppress("DEPRECATION")
-                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-                if (!addresses.isNullOrEmpty()) {
-                    val address = addresses[0]
-                    LocationData(
-                        latitude = latitude,
-                        longitude = longitude,
-                        cityName = address.locality ?: address.subAdminArea ?: "Naməlum Şəhər",
-                        countryName = address.countryName ?: "Azərbaycan"
-                    )
-                } else {
-                    LocationData(
-                        latitude = latitude,
-                        longitude = longitude,
-                        cityName = "Hazırkı Yer",
-                        countryName = "Azərbaycan"
-                    )
+                withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocation(latitude, longitude, 1)?.firstOrNull()
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            LocationData(
-                latitude = latitude,
-                longitude = longitude,
-                cityName = "Hazırkı Yer",
-                countryName = "Azərbaycan"
-            )
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+            null
         }
     }
-    
-    /**
-     * Yer icazəsinin olub-olmadığını yoxla
-     */
-    fun hasLocationPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
+
+    fun hasFineLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(
+        ) == PackageManager.PERMISSION_GRANTED
+
+    fun hasLocationPermission(): Boolean =
+        hasFineLocationPermission() || ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-    }
 }

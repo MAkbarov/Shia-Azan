@@ -7,78 +7,57 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/**
- * 🌙 Qaranlıq Rejim - Bənövşəyi Tema
- */
 private val DarkColorScheme = darkColorScheme(
     primary = PurplePrimaryDarkMode,
-    onPrimary = Color(0xFF1A0B1F),
+    onPrimary = Color(0xFF052B30),
     primaryContainer = DarkSurfaceVariant,
     onPrimaryContainer = PurplePrimaryDarkMode,
-    
     secondary = PurpleSecondaryDarkMode,
-    onSecondary = Color(0xFF1A0B1F),
-    secondaryContainer = Color(0xFF4A148C),
+    onSecondary = Color(0xFF052B30),
+    secondaryContainer = Color(0xFF10444B),
     onSecondaryContainer = PurpleSecondaryDarkMode,
-    
     tertiary = PurpleTertiaryDarkMode,
-    onTertiary = Color.White,
-    
+    onTertiary = Color(0xFF071D22),
     background = DarkBackground,
-    onBackground = Color(0xFFE8DEF8),
-    
+    onBackground = Color(0xFFD8F5F3),
     surface = DarkSurface,
-    onSurface = Color(0xFFE8DEF8),
+    onSurface = Color(0xFFD8F5F3),
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = Color(0xFFCAC4D0),
-    
+    onSurfaceVariant = Color(0xFFB5D7D5),
     error = ErrorRed,
     onError = Color.White,
-    
-    outline = Color(0xFF7B6F7F),
-    outlineVariant = Color(0xFF4A4458)
+    outline = Color(0xFF6F918F),
+    outlineVariant = Color(0xFF355B5D)
 )
 
-/**
- * ☀️ İşıqlı Rejim - Bənövşəyi Tema
- */
 private val LightColorScheme = lightColorScheme(
     primary = PurplePrimary,
     onPrimary = Color.White,
     primaryContainer = LightSurfaceVariant,
     onPrimaryContainer = PurplePrimaryDark,
-    
     secondary = PurpleSecondary,
     onSecondary = Color.White,
     secondaryContainer = PurpleSecondaryLight,
-    onSecondaryContainer = PurplePrimaryDark,
-    
+    onSecondaryContainer = Color(0xFF07545E),
     tertiary = PurpleTertiary,
     onTertiary = Color.White,
-    
     background = LightBackground,
-    onBackground = Color(0xFF1C1B1F),
-    
+    onBackground = Color(0xFF102A2E),
     surface = LightSurface,
-    onSurface = Color(0xFF1C1B1F),
+    onSurface = Color(0xFF102A2E),
     surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = Color(0xFF49454F),
-    
+    onSurfaceVariant = Color(0xFF3F5C60),
     error = ErrorRed,
     onError = Color.White,
-    
-    outline = Color(0xFF79747E),
-    outlineVariant = Color(0xFFCAC4D0)
+    outline = Color(0xFF6B8589),
+    outlineVariant = Color(0xFFB8D6D4)
 )
 
-/**
- * 🎨 Premium Şiə Azan Teması
- * Sistem dark mode-nu avtomatik izləyir
- */
+/** Loqoya uyğun firuzəyi XIV Azan teması; sistem dark mode-u avtomatik izlənir. */
 @Composable
 fun ShiaAzanTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Android 12+ dinamik rənglər
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

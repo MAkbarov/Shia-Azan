@@ -53,6 +53,14 @@ class AzanReceiver : BroadcastReceiver() {
             val notificationHelper = NotificationHelper(context)
             notificationHelper.showPrayerNotification(prayerType, prayerName, prayerTime)
             
+            // Azan alarmı işləyən kimi daimi/status/kilid ekranı bildirişini də
+            // yenilə ki, daxil olmuş namaz köhnə "növbəti namaz" kimi qalmasın.
+            context.sendBroadcast(
+                Intent(context, OngoingNotificationBootReceiver::class.java).apply {
+                    action = OngoingNotificationBootReceiver.ACTION_PRAYER_STATE_CHANGED
+                }
+            )
+
             // Azanı dərhal başlat
             handlePlayAzan(context, intent)
             

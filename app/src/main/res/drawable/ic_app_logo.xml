@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Şəkil 1-dəki şəffaf fonlu XIV Azan loqosunun Android vector versiyası. -->
+    <path
+        android:fillColor="#7CCFD0"
+        android:pathData="M15,2H93C100.2,2 106,7.8 106,15V93C106,100.2 100.2,106 93,106H15C7.8,106 2,100.2 2,93V15C2,7.8 7.8,2 15,2Z" />
+    <path
+        android:fillColor="#AFE8D3"
+        android:pathData="M29,18H79C86.2,18 92,23.8 92,31V81C92,88.2 86.2,94 79,94H29C21.8,94 16,88.2 16,81V31C16,23.8 21.8,18 29,18Z" />
+
+    <!-- Azan səs dalğaları -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.8"
+        android:strokeLineCap="round"
+        android:pathData="M37,34C28,42 28,56 37,64M31,28C18,40 18,59 31,71M71,34C80,42 80,56 71,64M77,28C90,40 90,59 77,71" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M43,40C38,45 38,53 43,58M65,40C70,45 70,53 65,58" />
+
+    <!-- Minarə -->
+    <path
+        android:fillColor="#21C4C3"
+        android:pathData="M48,61H60V94H48Z" />
+    <path
+        android:fillColor="#149DB5"
+        android:pathData="M54,61H60V94H54Z" />
+    <path
+        android:fillColor="#173D8D"
+        android:pathData="M51.5,94V83C51.5,80.5 54,78.5 54,78.5C54,78.5 56.5,80.5 56.5,83V94Z" />
+    <path
+        android:fillColor="#21C4C3"
+        android:pathData="M46,47H62V60H46Z" />
+    <path
+        android:fillColor="#149DB5"
+        android:pathData="M54,47H62V60H54Z" />
+    <path
+        android:fillColor="#173D8D"
+        android:pathData="M48.5,60V53.5C48.5,51.7 50,50.2 51.5,49.5V60ZM53,60V52.5C53,50.6 54,49 54,49C54,49 55,50.6 55,52.5V60ZM56.5,60V53.5C56.5,51.7 58,50.2 59.5,49.5V60Z" />
+    <path
+        android:fillColor="#173D8D"
+        android:pathData="M44,59H64V63H44ZM46,63H62L59.5,67H48.5Z" />
+    <path
+        android:fillColor="#21C4C3"
+        android:pathData="M47,43C45,38 48.5,34 54,29C59.5,34 63,38 61,43C59,47 49,47 47,43Z" />
+    <path
+        android:fillColor="#149DB5"
+        android:pathData="M54,29C59.5,34 63,38 61,43C60,45 57,46 54,46Z" />
+    <path
+        android:fillColor="#173D8D"
+        android:pathData="M46,44H62C63.2,44 64,44.8 64,46C64,47.2 63.2,48 62,48H46C44.8,48 44,47.2 44,46C44,44.8 44.8,44 46,44Z" />
+
+    <!-- Hilal və ulduz -->
+    <path
+        android:fillColor="#F5C85B"
+        android:fillType="evenOdd"
+        android:pathData="M54,18C47.5,20 45.5,27.5 49.5,32C52.5,35.5 58,35.5 61,32C56.5,33 52.5,30 52,26C51.5,22.5 53,20 54,18ZM61.5,21L62.9,23.8L66,24.2L63.7,26.4L64.3,29.5L61.5,28L58.7,29.5L59.3,26.4L57,24.2L60.1,23.8Z" />
+</vector>

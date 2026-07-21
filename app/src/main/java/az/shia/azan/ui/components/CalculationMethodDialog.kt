@@ -46,7 +46,7 @@ fun CalculationMethodDialog(
                                 fontWeight = if (method == currentMethod) FontWeight.Bold else FontWeight.Normal
                             )
                             Text(
-                                text = "Sübh: ${method.fajrAngle}°, Məğrib: ${method.maghribAngle}°",
+                                text = "Sübh: ${method.fajrAngle}°, Məğrib: ${method.maghribAngle}°, İşa: ${method.ishaAngle}°",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )

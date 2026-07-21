@@ -96,22 +96,29 @@ class AlarmScheduler(private val context: Context) {
      * Bütün alarmları ləğv et
      */
     fun cancelAllAlarms() {
-        for (i in 0 until 6) { // 6 namaz vaxtı
-            val intent = Intent(context, AzanReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                BASE_REQUEST_CODE + i,
-                intent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
-            )
-            
-            pendingIntent?.let {
-                alarmManager.cancel(it)
-                it.cancel()
+        for (i in 0 until 6) {
+            // PendingIntent identity-si scheduleAlarm ilə eyni action-u daşımalıdır.
+            val intent = Intent(context, AzanReceiver::class.java).apply {
+                action = AzanReceiver.ACTION_PRAYER_TIME
             }
+            cancelPendingAlarm(BASE_REQUEST_CODE + i, intent)
+            cancelPendingAlarm(BASE_REQUEST_CODE + 100 + i, intent)
         }
-        
+
         Log.d(TAG, "All alarms cancelled")
+    }
+
+    private fun cancelPendingAlarm(requestCode: Int, intent: Intent) {
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
+        )
+        pendingIntent?.let {
+            alarmManager.cancel(it)
+            it.cancel()
+        }
     }
     
     /**

@@ -1,14 +1,18 @@
 package az.shia.azan.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.shia.azan.calculator.PrayerTimesCalculator
-import az.shia.azan.data.ShiaCities
 import az.shia.azan.data.CalculationMethod
 import az.shia.azan.data.DailyPrayerTimes
 import az.shia.azan.data.LocationData
 import az.shia.azan.data.PrayerTime
+import az.shia.azan.data.PrayerType
 import az.shia.azan.data.PreferencesManager
+import az.shia.azan.data.ShiaCities
+import az.shia.azan.utils.TimeFormatter
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,35 +21,33 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.TimeZone
 
-/**
- * Namaz vaxtları üçün ViewModel
- */
-class PrayerTimesViewModel(application: android.app.Application) : androidx.lifecycle.AndroidViewModel(application) {
-    
+/** Namaz vaxtları və cari növbəti namaz üçün ViewModel. */
+class PrayerTimesViewModel(application: Application) : AndroidViewModel(application) {
+
     private val calculator = PrayerTimesCalculator()
     private val preferencesManager = PreferencesManager(application)
-    
+    private var calculationJob: Job? = null
+    private var activeMethod = CalculationMethod.LEVA_QUM
+
     private val _prayerTimes = MutableStateFlow<DailyPrayerTimes?>(null)
     val prayerTimes: StateFlow<DailyPrayerTimes?> = _prayerTimes.asStateFlow()
-    
-    private val _selectedLocation = MutableStateFlow(az.shia.azan.data.ShiaCities.getDefaultCity())
+
+    private val _selectedLocation = MutableStateFlow(ShiaCities.getDefaultCity())
     val selectedLocation: StateFlow<LocationData> = _selectedLocation.asStateFlow()
-    
+
     private val _nextPrayer = MutableStateFlow<PrayerTime?>(null)
     val nextPrayer: StateFlow<PrayerTime?> = _nextPrayer.asStateFlow()
-    
+
     private val _currentTime = MutableStateFlow(Calendar.getInstance())
     val currentTime: StateFlow<Calendar> = _currentTime.asStateFlow()
-    
+
     init {
         viewModelScope.launch {
-            // Son saxlanılmış şəhəri yüklə
             preferencesManager.getLastLocation().firstOrNull()?.let {
                 _selectedLocation.value = it
             }
-            
-            // Parametrləri izlə (hesablama metodu dəyişdikdə yenidən hesabla)
             launch {
                 preferencesManager.settingsFlow.collectLatest { settings ->
                     loadPrayerTimes(settings.calculationMethod)
@@ -53,61 +55,88 @@ class PrayerTimesViewModel(application: android.app.Application) : androidx.life
             }
         }
     }
-    
-    /**
-     * Namaz vaxtlarını yüklə
-     */
+
     fun loadPrayerTimes(method: CalculationMethod? = null) {
-        viewModelScope.launch {
+        calculationJob?.cancel()
+        calculationJob = viewModelScope.launch {
             try {
-                // Əgər metod verilməyibsə, cari settings-dən götür
-                val currentMethod = method ?: preferencesManager.settingsFlow.first().calculationMethod
-                
+                activeMethod = method
+                    ?: preferencesManager.settingsFlow.first().calculationMethod
+                val locationSnapshot = _selectedLocation.value
+                val now = currentLocationTime(locationSnapshot)
                 val times = calculator.calculatePrayerTimes(
-                    date = Calendar.getInstance(),
-                    location = _selectedLocation.value,
-                    method = currentMethod
+                    date = now,
+                    location = locationSnapshot,
+                    method = activeMethod
                 )
                 _prayerTimes.value = times
-                updateNextPrayer()
-                
-                // Callback çağır (alarm qurma üçün)
-                onPrayerTimesLoaded?.invoke(times)
-            } catch (e: Exception) {
-                e.printStackTrace()
+                updateNextPrayer(now)
+
+                // Tətbiq İşadan sonra açılıbsa alarm planı bugünün keçmiş
+                // vaxtlarında qalmasın; sabahın real hesabını planlaşdır.
+                val alarmDay = if (times.isha.timeInMillis <= now.timeInMillis) {
+                    calculateTomorrowTimes(now, locationSnapshot, activeMethod)
+                } else {
+                    times
+                }
+                onPrayerTimesLoaded?.invoke(alarmDay)
+            } catch (exception: kotlinx.coroutines.CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                exception.printStackTrace()
             }
         }
     }
-    
-    /**
-     * Şəhəri dəyiş
-     */
+
     fun selectLocation(location: LocationData) {
         _selectedLocation.value = location
-        viewModelScope.launch {
-            preferencesManager.setLastLocation(location)
-        }
+        viewModelScope.launch { preferencesManager.setLastLocation(location) }
         loadPrayerTimes()
     }
-    
-    /**
-     * AlarmScheduler üçün callback
-     */
+
     var onPrayerTimesLoaded: ((DailyPrayerTimes) -> Unit)? = null
-    
+
     /**
-     * Növbəti namazı yenilə
+     * Cari gün bitibsə real sabah tarixini kalkulyatora verib Sübhü qaytarır.
+     * Beləliklə İşadan sonra nextPrayer null və ya bugünkü keçmiş Sübh olmur.
      */
-    fun updateNextPrayer() {
-        _currentTime.value = Calendar.getInstance()
-        _nextPrayer.value = _prayerTimes.value?.getNextPrayer(_currentTime.value)
+    fun updateNextPrayer(now: Calendar = currentLocationTime()) {
+        _currentTime.value = now
+        val todayTimes = _prayerTimes.value
+        _nextPrayer.value = todayTimes?.getNextPrayer(now) ?: run {
+            val tomorrowTimes = calculateTomorrowTimes(
+                now = now,
+                location = _selectedLocation.value,
+                method = activeMethod
+            )
+            tomorrowTimes.getAllPrayers().first { it.type == PrayerType.FAJR }
+        }
     }
-    
-    /**
-     * Hazırkı vaxtı yenilə
-     */
+
+    /** Vaxtı yenilə; yerli tarix dəyişibsə bütün günlük hesabı təzələ. */
     fun updateCurrentTime() {
-        _currentTime.value = Calendar.getInstance()
-        updateNextPrayer()
+        val now = currentLocationTime()
+        _currentTime.value = now
+        val loadedDay = _prayerTimes.value?.date
+        if (loadedDay == null || !TimeFormatter.isSameDay(loadedDay, now)) {
+            loadPrayerTimes(activeMethod)
+        } else {
+            updateNextPrayer(now)
+        }
     }
+
+    private fun calculateTomorrowTimes(
+        now: Calendar,
+        location: LocationData,
+        method: CalculationMethod
+    ): DailyPrayerTimes {
+        val tomorrow = (now.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+        return calculator.calculatePrayerTimes(tomorrow, location, method)
+    }
+
+    private fun currentLocationTime(
+        location: LocationData = _selectedLocation.value
+    ): Calendar = Calendar.getInstance(TimeZone.getTimeZone(location.timeZone))
 }

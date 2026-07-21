@@ -97,9 +97,15 @@ fun AzanSoundSelectionDialog(
                     .padding(24.dp)
             ) {
                 Text(
-                    text = "🎵 Azan Səsi Seçin",
+                    text = "Azan səsini seçin",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Hazırda tətbiqə əlavə edilmiş səslər",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))

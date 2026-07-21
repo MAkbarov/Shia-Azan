@@ -10,21 +10,22 @@ import java.util.concurrent.TimeUnit
  */
 object TimeFormatter {
     
-    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    private val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-    
     /**
-     * Calendar obyektini saat:dəqiqə formatında göstər
+     * Calendar obyektini öz timezone-u ilə saat:dəqiqə formatında göstər.
      */
     fun formatTime(calendar: Calendar): String {
-        return timeFormat.format(calendar.time)
+        return SimpleDateFormat("HH:mm", Locale.getDefault()).apply {
+            timeZone = calendar.timeZone
+        }.format(calendar.time)
     }
     
     /**
-     * Calendar obyektini tarix formatında göstər
+     * Calendar obyektini öz timezone-u ilə tarix formatında göstər.
      */
     fun formatDate(calendar: Calendar): String {
-        return dateFormat.format(calendar.time)
+        return SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).apply {
+            timeZone = calendar.timeZone
+        }.format(calendar.time)
     }
     
     /**

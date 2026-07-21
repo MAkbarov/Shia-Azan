@@ -43,26 +43,23 @@ enum class CalculationMethod(
     val ishaAngle: Double
 ) {
     LEVA_QUM("Qum (Leva İnstitutu)", 16.0, 4.0, 14.0),
-    TEHRAN("Tehran (Geofizika İnstitutu)", 17.7, 4.5, 14.0),
-    STANDARD("Standart Şiə Metodu", 16.0, 4.0, 14.0)
+    TEHRAN("Tehran (Geofizika İnstitutu)", 17.7, 4.5, 14.0)
 }
 
 /**
  * Azan səsi növləri
  */
-enum class AzanSound(val displayName: String, val fileName: String) {
-    DEFAULT("Standart Şiə Azan", "azan_default"),
-    MAKKAH("Məkkə Azanı", "azan_makkah"),
-    MADINAH("Mədinə Azanı", "azan_madinah"),
-    SHIA_1("Şiə Azan 1", "azan_shia_1"),
-    SHIA_2("Şiə Azan 2", "azan_shia_2"),
-    SHIA_3("Şiə Azan 3", "azan_shia_3");
-    
+enum class AzanSound(
+    val displayName: String,
+    val fileName: String,
+    val fajrFileName: String? = null
+) {
+    DEFAULT("Standart Şiə Azanı", "azan_default", "azan_fajr"),
+    ALI_FANI("Azan - Ali Fani", "azan_ali_fani"),
+    RAHIM_MUEZZINZADE("Azan - Rəhim Müəzzinzadə", "azan_rahim_muezzinzade"),
+    TEYMUR_SHIRVANLI("Azan - Teymur Şirvanlı", "azan_teymur_shirvanli");
+
     fun getResourceName(isFajr: Boolean): String {
-        return if (isFajr && this == DEFAULT) {
-            "azan_fajr"
-        } else {
-            fileName
-        }
+        return if (isFajr) fajrFileName ?: fileName else fileName
     }
 }

@@ -1,6 +1,5 @@
 package az.shia.azan.ui.screens
 
-import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,41 +16,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import az.shia.azan.data.ShiaCities
 import az.shia.azan.data.LocationData
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import az.shia.azan.data.ShiaCities
 
-/**
- * Şəhər seçimi ekranı
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+/** Şəhər seçimi ekranı. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationSelectionScreen(
     currentLocation: LocationData,
+    isLocating: Boolean,
+    locationError: String?,
     onLocationSelected: (LocationData) -> Unit,
     onRequestGPS: () -> Unit,
     onBackClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    
-    val locationPermissionState = rememberPermissionState(
-        Manifest.permission.ACCESS_FINE_LOCATION
-    )
-    
-    val cities = remember(searchQuery) {
-        ShiaCities.searchCities(searchQuery)
-    }
-    
+    val cities = remember(searchQuery) { ShiaCities.searchCities(searchQuery) }
     val categorizedCities = remember(searchQuery) {
-        if (searchQuery.isEmpty()) {
-            ShiaCities.categories
-        } else {
-            emptyMap()
-        }
+        if (searchQuery.isEmpty()) ShiaCities.categories else emptyMap()
     }
-    
+
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val appBarGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(
         colors = if (isDark) {
@@ -63,17 +47,12 @@ fun LocationSelectionScreen(
 
     Scaffold(
         topBar = {
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier.background(appBarGradient)
-            ) {
+            Box(modifier = Modifier.background(appBarGradient)) {
                 TopAppBar(
                     title = { Text("Şəhər Seçimi") },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Geri"
-                            )
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Geri")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -90,18 +69,11 @@ fun LocationSelectionScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // GPS düyməsi
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .clickable {
-                        if (locationPermissionState.status.isGranted) {
-                            onRequestGPS()
-                        } else {
-                            locationPermissionState.launchPermissionRequest()
-                        }
-                    },
+                    .clickable(enabled = !isLocating, onClick = onRequestGPS),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -112,29 +84,51 @@ fun LocationSelectionScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.MyLocation,
-                        contentDescription = "GPS",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    if (isLocating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "GPS",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Hazırkı Yerimi İstifadə Et",
+                            text = if (isLocating) {
+                                "Dəqiq məkan müəyyən edilir..."
+                            } else {
+                                "Hazırkı Yerimi İstifadə Et"
+                            },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "GPS vasitəsilə avtomatik təyin et",
+                            text = if (isLocating) {
+                                "GPS siqnalı gözlənilir, bir neçə saniyə çəkə bilər"
+                            } else {
+                                "Yeni yüksək dəqiqlikli GPS nəticəsi al və seç"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
+                        locationError?.let { error ->
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = error,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
-            
-            // Axtarış
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -142,38 +136,27 @@ fun LocationSelectionScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("Şəhər axtar...") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Axtar"
-                    )
-                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Axtar") },
                 singleLine = true
             )
-            
-            // Şəhərlər siyahısı
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 if (searchQuery.isEmpty()) {
-                    // Kateqoriyalara görə göstər
                     categorizedCities.forEach { (category, cityList) ->
-                        item {
-                            CategoryHeader(category)
-                        }
-                        
+                        item { CategoryHeader(category) }
                         items(cityList) { city ->
                             CityListItem(
                                 city = city,
                                 isSelected = city.cityName == currentLocation.cityName &&
-                                           city.countryName == currentLocation.countryName,
+                                    city.countryName == currentLocation.countryName,
                                 onSelect = { onLocationSelected(city) }
                             )
                         }
                     }
                 } else {
-                    // Axtarış nəticələri
                     item {
                         Text(
                             text = "Axtarış Nəticələri (${cities.size})",
@@ -182,17 +165,16 @@ fun LocationSelectionScreen(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
-                    
                     items(cities) { city ->
                         CityListItem(
                             city = city,
                             isSelected = city.cityName == currentLocation.cityName &&
-                                       city.countryName == currentLocation.countryName,
+                                city.countryName == currentLocation.countryName,
                             onSelect = { onLocationSelected(city) }
                         )
                     }
                 }
-                
+
                 if (cities.isEmpty() && searchQuery.isNotEmpty()) {
                     item {
                         Box(
@@ -214,9 +196,6 @@ fun LocationSelectionScreen(
     }
 }
 
-/**
- * Şəhər list item komponenti
- */
 @Composable
 fun CityListItem(
     city: LocationData,
@@ -227,7 +206,7 @@ fun CityListItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onSelect() },
+            .clickable(onClick = onSelect),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer
@@ -235,9 +214,7 @@ fun CityListItem(
                 MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 4.dp else 1.dp
-        )
+        elevation = CardDefaults.cardElevation(if (isSelected) 4.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -262,7 +239,6 @@ fun CityListItem(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             }
-            
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.Check,
@@ -275,11 +251,6 @@ fun CityListItem(
     }
 }
 
-
-
-/**
- * Kateqoriya başlığı
- */
 @Composable
 fun CategoryHeader(title: String) {
     Text(

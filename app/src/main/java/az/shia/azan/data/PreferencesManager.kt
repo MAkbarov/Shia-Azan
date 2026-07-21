@@ -52,6 +52,8 @@ class PreferencesManager(private val context: Context) {
         val LAST_CITY = stringPreferencesKey("last_city")
         val LAST_LAT = floatPreferencesKey("last_lat")
         val LAST_LNG = floatPreferencesKey("last_lng")
+        val LAST_COUNTRY = stringPreferencesKey("last_country")
+        val LAST_TIME_ZONE = stringPreferencesKey("last_time_zone")
     }
     
     /**
@@ -179,24 +181,38 @@ class PreferencesManager(private val context: Context) {
     }
     
     /**
-     * Son seçilmiş şəhəri saxla
+     * Son seçilmiş şəhəri onun timezone-u ilə birlikdə saxla.
      */
     suspend fun setLastLocation(location: LocationData) {
         context.dataStore.edit { preferences ->
             preferences[LAST_CITY] = location.cityName
             preferences[LAST_LAT] = location.latitude.toFloat()
             preferences[LAST_LNG] = location.longitude.toFloat()
+            preferences[LAST_COUNTRY] = location.countryName
+            preferences[LAST_TIME_ZONE] = location.timeZone
         }
     }
     
     /**
-     * Son seçilmiş şəhəri al
+     * Son seçilmiş şəhəri al. Köhnə saxlanmış qeydlərdə timezone olmadığı halda,
+     * tanınan Şiə şəhərlərinin siyahısından düzgün məlumatı bərpa et.
      */
     fun getLastLocation(): Flow<LocationData?> = context.dataStore.data.map { preferences ->
         val city = preferences[LAST_CITY] ?: return@map null
         val lat = preferences[LAST_LAT] ?: 0f
         val lng = preferences[LAST_LNG] ?: 0f
-        LocationData(lat.toDouble(), lng.toDouble(), city, "")
+        val savedCountry = preferences[LAST_COUNTRY]
+        val knownCity = ShiaCities.allCities.firstOrNull {
+            it.cityName == city && (savedCountry.isNullOrBlank() || it.countryName == savedCountry)
+        }
+
+        LocationData(
+            latitude = knownCity?.latitude ?: lat.toDouble(),
+            longitude = knownCity?.longitude ?: lng.toDouble(),
+            cityName = city,
+            countryName = savedCountry ?: knownCity?.countryName.orEmpty(),
+            timeZone = preferences[LAST_TIME_ZONE] ?: knownCity?.timeZone ?: "Asia/Baku"
+        )
     }
     
     /**

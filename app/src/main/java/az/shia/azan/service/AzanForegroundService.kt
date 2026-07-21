@@ -18,57 +18,67 @@ import androidx.core.app.NotificationCompat
 import az.shia.azan.MainActivity
 import az.shia.azan.R
 import az.shia.azan.audio.AzanPlayer
+import az.shia.azan.data.PreferencesManager
 import az.shia.azan.data.PrayerType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
-/**
- * 🔋 Arxa fonda azan oxutmaq üçün Foreground Service
- */
+/** Arxa fonda azanı seçilmiş səs və volume ilə oxudan foreground service. */
 class AzanForegroundService : Service() {
-    
+
     private lateinit var azanPlayer: AzanPlayer
+    private lateinit var preferencesManager: PreferencesManager
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var wakeLock: PowerManager.WakeLock? = null
     private var audioManager: AudioManager? = null
-    
+
     companion object {
         const val CHANNEL_ID = "azan_playback_channel"
         const val NOTIFICATION_ID = 2001
-        
         const val ACTION_START_AZAN = "az.shia.azan.START_AZAN"
         const val ACTION_STOP_AZAN = "az.shia.azan.STOP_AZAN"
         const val EXTRA_PRAYER_TYPE = "prayer_type"
         const val EXTRA_PRAYER_NAME = "prayer_name"
     }
-    
+
     override fun onCreate() {
         super.onCreate()
         azanPlayer = AzanPlayer(applicationContext)
+        preferencesManager = PreferencesManager(applicationContext)
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         createNotificationChannel()
         acquireWakeLock()
     }
-    
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START_AZAN -> {
                 val prayerTypeName = intent.getStringExtra(EXTRA_PRAYER_TYPE)
                 val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: "Namaz"
-                
-                // Audio Focus tələb et (digər səsləri dayandırmaq üçün)
+
                 requestAudioFocus()
-                
-                // Foreground service başlat
                 startForeground(NOTIFICATION_ID, createForegroundNotification(prayerName))
-                
-                // Azan oxut
-                prayerTypeName?.let {
-                    try {
-                        val prayerType = PrayerType.valueOf(it)
-                        azanPlayer.playAzan(prayerType) {
+
+                if (prayerTypeName == null) {
+                    stopSelf()
+                } else {
+                    serviceScope.launch {
+                        try {
+                            val prayerType = PrayerType.valueOf(prayerTypeName)
+                            val settings = preferencesManager.settingsFlow.first()
+                            azanPlayer.playAzan(
+                                prayerType = prayerType,
+                                sound = settings.selectedAzanSound,
+                                volume = settings.azanVolume
+                            ) { stopSelf() }
+                        } catch (exception: Exception) {
+                            exception.printStackTrace()
                             stopSelf()
                         }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        stopSelf()
                     }
                 }
             }
@@ -77,86 +87,70 @@ class AzanForegroundService : Service() {
                 stopSelf()
             }
         }
-        
         return START_NOT_STICKY
     }
-    
+
     private fun requestAudioFocus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val audioAttributes = AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
-            
-            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(audioAttributes)
                 .build()
-            
             audioManager?.requestAudioFocus(focusRequest)
         } else {
             @Suppress("DEPRECATION")
-            audioManager?.requestAudioFocus(null, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            audioManager?.requestAudioFocus(
+                null,
+                AudioManager.STREAM_ALARM,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+            )
         }
     }
-    
+
     override fun onDestroy() {
+        serviceScope.cancel()
         azanPlayer.release()
         releaseWakeLock()
         super.onDestroy()
     }
-    
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
-    
-    /**
-     * Foreground notification yaradır
-     */
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
     private fun createForegroundNotification(prayerName: String): Notification {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        
-        val pendingIntent = PendingIntent.getActivity(
+        val contentIntent = PendingIntent.getActivity(
             this,
             0,
-            intent,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        
-        // Dayandırma action
-        val stopIntent = Intent(this, AzanForegroundService::class.java).apply {
-            action = ACTION_STOP_AZAN
-        }
-        
         val stopPendingIntent = PendingIntent.getService(
             this,
             0,
-            stopIntent,
+            Intent(this, AzanForegroundService::class.java).apply {
+                action = ACTION_STOP_AZAN
+            },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("🕌 $prayerName Azanı")
             .setContentText("Azan oxunur...")
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(BitmapFactory.decodeResource(resources, R.drawable.app_logo))
-            .setContentIntent(pendingIntent)
-            .addAction(
-                R.drawable.ic_stop,
-                "Dayandır",
-                stopPendingIntent
-            )
+            .setContentIntent(contentIntent)
+            .addAction(R.drawable.ic_stop, "Dayandır", stopPendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }
-    
-    /**
-     * Notification channel yaradır
-     */
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -167,41 +161,28 @@ class AzanForegroundService : Service() {
                 description = "Arxa fonda azan oxutma xidməti"
                 setShowBadge(false)
             }
-            
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .createNotificationChannel(channel)
         }
     }
-    
-    /**
-     * Wake Lock al - ekran bağlı olsa belə işləsin
-     */
+
     private fun acquireWakeLock() {
         try {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
             wakeLock = powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
                 "ShiaAzan::AzanWakeLock"
-            ).apply {
-                acquire(10 * 60 * 1000L) // 10 dəqiqə maksimum
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            ).apply { acquire(10 * 60 * 1000L) }
+        } catch (exception: Exception) {
+            exception.printStackTrace()
         }
     }
-    
-    /**
-     * Wake Lock-u burax
-     */
+
     private fun releaseWakeLock() {
         try {
-            wakeLock?.let {
-                if (it.isHeld) {
-                    it.release()
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            wakeLock?.takeIf { it.isHeld }?.release()
+        } catch (exception: Exception) {
+            exception.printStackTrace()
         }
     }
 }

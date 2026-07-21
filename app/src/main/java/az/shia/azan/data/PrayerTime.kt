@@ -49,7 +49,9 @@ data class DailyPrayerTimes(
     }
     
     fun getNextPrayer(currentTime: Calendar = Calendar.getInstance()): PrayerTime? {
-        val prayers = getAllPrayers()
-        return prayers.firstOrNull { it.time.timeInMillis > currentTime.timeInMillis }
+        return getAllPrayers()
+            .asSequence()
+            .filter { it.type != PrayerType.SUNRISE }
+            .firstOrNull { it.time.timeInMillis > currentTime.timeInMillis }
     }
 }

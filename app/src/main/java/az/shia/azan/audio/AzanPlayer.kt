@@ -2,130 +2,153 @@ package az.shia.azan.audio
 
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.audiofx.LoudnessEnhancer
 import az.shia.azan.R
+import az.shia.azan.data.AzanSound
 import az.shia.azan.data.PrayerType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.math.roundToInt
 
-/**
- * Azan səslərini oxutmaq üçün player
- */
+/** Azan səslərini seçilmiş resurs və səs səviyyəsi ilə oxudan player. */
 class AzanPlayer(private val context: Context) {
-    
+
     private var mediaPlayer: MediaPlayer? = null
-    
+    private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var currentVolume = 1f
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
-    
+
     private val _currentPrayerType = MutableStateFlow<PrayerType?>(null)
     val currentPrayerType: StateFlow<PrayerType?> = _currentPrayerType.asStateFlow()
-    
-    /**
-     * Azan səsini oxut
-     */
-    fun playAzan(prayerType: PrayerType, onComplete: (() -> Unit)? = null) {
-        // Əgər artıq oxuyursa, əvvəlcə dayandır
+
+    fun playAzan(
+        prayerType: PrayerType,
+        sound: AzanSound = AzanSound.DEFAULT,
+        volume: Float = currentVolume,
+        onComplete: (() -> Unit)? = null
+    ) {
         stop()
-        
+        currentVolume = volume.coerceIn(0f, 1f)
+
         try {
-            val audioResId = getAzanAudioResource(prayerType)
-            
-            mediaPlayer = MediaPlayer().apply {
+            val audioResId = getAzanAudioResource(prayerType, sound)
+            val player = MediaPlayer().apply {
                 setAudioAttributes(
                     AudioAttributes.Builder()
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .setUsage(AudioAttributes.USAGE_ALARM)
                         .build()
                 )
-                
                 setDataSource(
                     context,
                     android.net.Uri.parse("android.resource://${context.packageName}/$audioResId")
                 )
-                
-                setOnCompletionListener {
+                setOnCompletionListener { completedPlayer ->
+                    releaseEnhancer()
+                    completedPlayer.release()
+                    if (mediaPlayer === completedPlayer) mediaPlayer = null
                     _isPlaying.value = false
                     _currentPrayerType.value = null
-                    release()
-                    mediaPlayer = null
                     onComplete?.invoke()
                 }
-                
-                setOnErrorListener { mp, what, extra ->
+                setOnErrorListener { failedPlayer, _, _ ->
+                    releaseEnhancer()
+                    failedPlayer.release()
+                    if (mediaPlayer === failedPlayer) mediaPlayer = null
                     _isPlaying.value = false
                     _currentPrayerType.value = null
-                    release()
-                    mediaPlayer = null
                     true
                 }
-                
                 prepare()
-                start()
-                
-                _isPlaying.value = true
-                _currentPrayerType.value = prayerType
+                setVolume(currentVolume, currentVolume)
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+
+            mediaPlayer = player
+            configureLoudnessEnhancer(player, currentVolume)
+            player.start()
+            _isPlaying.value = true
+            _currentPrayerType.value = prayerType
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+            releaseEnhancer()
+            mediaPlayer?.release()
+            mediaPlayer = null
             _isPlaying.value = false
             _currentPrayerType.value = null
         }
     }
-    
-    /**
-     * Azanı dayandır
-     */
+
     fun stop() {
-        mediaPlayer?.let {
-            if (it.isPlaying) {
-                it.stop()
+        releaseEnhancer()
+        mediaPlayer?.let { player ->
+            try {
+                if (player.isPlaying) player.stop()
+            } catch (_: IllegalStateException) {
+                // Player artıq tamamlanıbsa yalnız release kifayətdir.
             }
-            it.release()
-            mediaPlayer = null
+            player.release()
         }
+        mediaPlayer = null
         _isPlaying.value = false
         _currentPrayerType.value = null
     }
-    
-    /**
-     * Pauza et / davam et
-     */
+
     fun togglePause() {
-        mediaPlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
+        mediaPlayer?.let { player ->
+            if (player.isPlaying) {
+                player.pause()
                 _isPlaying.value = false
             } else {
-                it.start()
+                player.start()
                 _isPlaying.value = true
             }
         }
     }
-    
-    /**
-     * Səs səviyyəsini dəyiş (0.0 - 1.0)
-     */
+
+    /** Slider həm cari, həm də növbəti playback üçün real volume-a tətbiq edilir. */
     fun setVolume(volume: Float) {
-        mediaPlayer?.setVolume(volume, volume)
+        currentVolume = volume.coerceIn(0f, 1f)
+        mediaPlayer?.setVolume(currentVolume, currentVolume)
+        loudnessEnhancer?.setTargetGain((MAX_GAIN_MB * currentVolume).roundToInt())
     }
-    
-    /**
-     * Player-i təmizlə
-     */
-    fun release() {
-        stop()
-    }
-    
-    /**
-     * Namaz növünə görə audio resource-u seç
-     */
-    private fun getAzanAudioResource(prayerType: PrayerType): Int {
-        return when (prayerType) {
-            PrayerType.FAJR -> R.raw.azan_fajr  // Sübh azanı (əlavə tekstlə)
-            else -> R.raw.azan_default           // Digər namaz vaxtları
+
+    fun release() = stop()
+
+    private fun configureLoudnessEnhancer(player: MediaPlayer, volume: Float) {
+        releaseEnhancer()
+        try {
+            loudnessEnhancer = LoudnessEnhancer(player.audioSessionId).apply {
+                setTargetGain((MAX_GAIN_MB * volume).roundToInt())
+                enabled = volume > 0f
+            }
+        } catch (exception: Exception) {
+            // Bəzi istehsalçı audio mühərrikləri effekti dəstəkləmir; playback davam edir.
+            exception.printStackTrace()
+            loudnessEnhancer = null
         }
+    }
+
+    private fun releaseEnhancer() {
+        try {
+            loudnessEnhancer?.release()
+        } catch (_: Exception) {
+            // Artıq release edilmiş audio effect-i nəzərə alma.
+        }
+        loudnessEnhancer = null
+    }
+
+    private fun getAzanAudioResource(prayerType: PrayerType, sound: AzanSound): Int {
+        val resourceName = sound.getResourceName(prayerType == PrayerType.FAJR)
+        val resourceId = context.resources.getIdentifier(resourceName, "raw", context.packageName)
+        return if (resourceId != 0) resourceId else R.raw.azan_default
+    }
+
+    private companion object {
+        // Mənbə MP3 zəif olduğuna görə 100%-də yumşaq +6 dB gücləndirmə.
+        const val MAX_GAIN_MB = 600f
     }
 }

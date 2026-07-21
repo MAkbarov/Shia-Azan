@@ -2,46 +2,39 @@ package az.shia.azan.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// 🎨 Premium Bənövşəyi Rəng Palitrası
+// Loqodakı firuzəyi, mavi və nanə tonlarından qurulan əsas palitra.
+val PurplePrimary = Color(0xFF149DB5)
+val PurplePrimaryLight = Color(0xFF21C4C3)
+val PurplePrimaryDark = Color(0xFF0B7285)
+val PurpleSecondary = Color(0xFF22BFC1)
+val PurpleSecondaryLight = Color(0xFF7CCFD0)
+val PurpleTertiary = Color(0xFF173D8D)
 
-// Light Mode - Ana rənglər
-val PurplePrimary = Color(0xFF6A1B9A)          // Tünd bənövşəyi
-val PurplePrimaryLight = Color(0xFF9C4DCC)     // Açıq bənövşəyi
-val PurplePrimaryDark = Color(0xFF4A148C)      // Çox tünd bənövşəyi
-val PurpleSecondary = Color(0xFFAB47BC)        // İkinci rəng
-val PurpleSecondaryLight = Color(0xFFCE93D8)   // Açıq ikinci rəng
-val PurpleTertiary = Color(0xFF7B1FA2)         // Üçüncü rəng
-
-// Light Mode - Fon rənglər
-val LightBackground = Color(0xFFFAF8FC)        // Çox açıq bənövşəyi fon
+// İşıqlı rejim səthləri.
+val LightBackground = Color(0xFFF4FBFB)
 val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF3E5F5)    // Açıq bənövşəyi səth
+val LightSurfaceVariant = Color(0xFFDDF5F0)
 
-// Dark Mode - Ana rənglər
-val PurplePrimaryDarkMode = Color(0xFFCE93D8)      // Açıq bənövşəyi (qaranlıq üçün)
-val PurpleSecondaryDarkMode = Color(0xFFBA68C8)    // İkinci rəng (qaranlıq)
-val PurpleTertiaryDarkMode = Color(0xFFAB47BC)     // Üçüncü rəng (qaranlıq)
+// Qaranlıq rejim üçün firuzəyi-qara səthlər.
+val PurplePrimaryDarkMode = Color(0xFF69DBD6)
+val PurpleSecondaryDarkMode = Color(0xFF7CCFD0)
+val PurpleTertiaryDarkMode = Color(0xFF8FB8FF)
+val DarkBackground = Color(0xFF071D22)
+val DarkSurface = Color(0xFF0D2C33)
+val DarkSurfaceVariant = Color(0xFF123E47)
 
-// Dark Mode - Fon rənglər
-val DarkBackground = Color(0xFF1A0B1F)         // Çox tünd bənövşəyi-qara
-val DarkSurface = Color(0xFF2D1B33)            // Tünd bənövşəyi səth
-val DarkSurfaceVariant = Color(0xFF3E2347)     // Variant səth
+val GoldAccent = Color(0xFFF5C85B)
+val GreenSuccess = Color(0xFF35B779)
+val ErrorRed = Color(0xFFE5484D)
 
-// Vurğu rənglər
-val GoldAccent = Color(0xFFFFB300)             // Qızıl vurğu
-val GreenSuccess = Color(0xFF4CAF50)           // Uğur rəngi
-val ErrorRed = Color(0xFFE53935)               // Xəta rəngi
+val NextPrayerLightBg = Color(0xFFE6F8F4)
+val NextPrayerDarkBg = Color(0xFF123E47)
 
-// Next Prayer Card
-val NextPrayerLightBg = Color(0xFFF3E5F5)      // Açıq bənövşəyi
-val NextPrayerDarkBg = Color(0xFF4A148C)       // Tünd bənövşəyi
+// Loqonun açıq firuzəyisindən tünd mavi tonuna keçid.
+val GradientStart = Color(0xFF21C4C3)
+val GradientMiddle = Color(0xFF149DB5)
+val GradientEnd = Color(0xFF173D8D)
 
-// Gradient rənglər
-val GradientStart = Color(0xFF6A1B9A)
-val GradientMiddle = Color(0xFF8E24AA)
-val GradientEnd = Color(0xFFAB47BC)
-
-// Dark Mode Gradient
-val GradientDarkStart = Color(0xFF2D1B33)
-val GradientDarkMiddle = Color(0xFF4A148C)
-val GradientDarkEnd = Color(0xFF6A1B9A)
+val GradientDarkStart = Color(0xFF071D22)
+val GradientDarkMiddle = Color(0xFF0B7285)
+val GradientDarkEnd = Color(0xFF149DB5)

@@ -48,11 +48,13 @@ fun HomeScreen(
     val nextPrayer by viewModel.nextPrayer.collectAsState()
     val currentTime by viewModel.currentTime.collectAsState()
     
-    // Vaxtı hər dəqiqə yenilə
+    // Ekran açılan kimi və hər real dəqiqə sərhədində vaxtı sinxronlaşdır.
+    // Bu, məsələn Əsr 16:45-də daxil olan anda nextPrayer-i gecikmədən dəyişir.
     LaunchedEffect(Unit) {
         while (true) {
-            kotlinx.coroutines.delay(60000) // 1 dəqiqə
             viewModel.updateCurrentTime()
+            val untilNextMinute = 60_000L - (System.currentTimeMillis() % 60_000L)
+            kotlinx.coroutines.delay(untilNextMinute + 150L)
         }
     }
     
@@ -72,7 +74,7 @@ fun HomeScreen(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
-                                painter = painterResource(id = R.drawable.app_logo),
+                                painter = painterResource(id = R.drawable.ic_app_logo),
                                 contentDescription = null,
                                 modifier = Modifier.size(40.dp)
                             )
@@ -199,7 +201,10 @@ fun HomeScreen(
                         items(times.getAllPrayers()) { prayer ->
                             PrayerTimeCard(
                                 prayer = prayer,
-                                isNextPrayer = prayer.type == nextPrayer?.type,
+                                // İşadan sonra nextPrayer sabahın Sübhüdür; həmin halda
+                                // bugünkü keçmiş Sübh kartını səhvən vurğulama.
+                                isNextPrayer = prayer.time.timeInMillis ==
+                                    nextPrayer?.time?.timeInMillis,
                                 onPlayAzan = { onPlayAzan(prayer) }
                             )
                         }
