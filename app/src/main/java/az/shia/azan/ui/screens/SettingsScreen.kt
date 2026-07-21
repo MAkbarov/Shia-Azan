@@ -22,8 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.shia.azan.data.AppSettings
 import az.shia.azan.data.AzanSound
+import az.shia.azan.data.CalculationMethod
 import az.shia.azan.data.PrayerType
 import az.shia.azan.ui.components.AzanSoundSelectionDialog
+import az.shia.azan.ui.components.CalculationMethodDialog
 import az.shia.azan.ui.components.ReminderTimeDialog
 import az.shia.azan.ui.components.VolumeSliderItem
 
@@ -41,11 +43,14 @@ fun SettingsScreen(
     onReminderTimeChange: (Int) -> Unit,
     on24HourToggle: (Boolean) -> Unit,
     onHijriToggle: (Boolean) -> Unit,
+    onOngoingNotificationToggle: (Boolean) -> Unit,
+    onCalculationMethodChange: (CalculationMethod) -> Unit,
     onBatteryOptimizationClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     var showAzanSoundDialog by remember { mutableStateOf(false) }
     var showReminderTimeDialog by remember { mutableStateOf(false) }
+    var showCalcMethodDialog by remember { mutableStateOf(false) }
     
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val appBarGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(
@@ -62,7 +67,7 @@ fun SettingsScreen(
                 modifier = Modifier.background(appBarGradient)
             ) {
                 TopAppBar(
-                    title = { Text("⚙️ Parametrlər") },
+                    title = { Text("Parametrlər") },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.Default.ArrowBack, "Geri")
@@ -85,7 +90,7 @@ fun SettingsScreen(
         ) {
             // Bildirişlər bölməsi
             item {
-                SectionHeader("🔔 Namaz Bildirişləri")
+                SectionHeader(Icons.Default.Notifications, "Namaz Bildirişləri")
             }
             
             item {
@@ -130,7 +135,7 @@ fun SettingsScreen(
             
             // Azan səsi bölməsi
             item {
-                SectionHeader("🎵 Azan Səsi")
+                SectionHeader(Icons.Default.MusicNote, "Azan Səsi")
             }
             
             item {
@@ -151,7 +156,7 @@ fun SettingsScreen(
             
             // Xatırlatma bölməsi
             item {
-                SectionHeader("⏰ Xatırlatma")
+                SectionHeader(Icons.Default.Timer, "Xatırlatma")
             }
             
             item {
@@ -177,7 +182,7 @@ fun SettingsScreen(
             
             // Görünüş bölməsi
             item {
-                SectionHeader("👁️ Görünüş")
+                SectionHeader(Icons.Default.Schedule, "Görünüş")
             }
             
             item {
@@ -200,9 +205,28 @@ fun SettingsScreen(
                 )
             }
             
+            item {
+                SwitchSettingsItem(
+                    icon = Icons.Default.Notifications,
+                    title = "Daimi Bildiriş",
+                    subtitle = "İkon və namaz vaxtlarını yuxarıda sabitlə",
+                    checked = settings.ongoingNotificationEnabled,
+                    onCheckedChange = onOngoingNotificationToggle
+                )
+            }
+            
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Schedule,
+                    title = "Hesablama Metodu",
+                    subtitle = settings.calculationMethod.displayName,
+                    onClick = { showCalcMethodDialog = true }
+                )
+            }
+            
             // Arxa fon bölməsi
             item {
-                SectionHeader("🔋 Arxa Fon")
+                SectionHeader(Icons.Default.BatteryChargingFull, "Arxa Fon")
             }
             
             item {
@@ -247,17 +271,40 @@ fun SettingsScreen(
             onDismiss = { showReminderTimeDialog = false }
         )
     }
+    
+    // Hesablama metodu dialogu
+    if (showCalcMethodDialog) {
+        CalculationMethodDialog(
+            currentMethod = settings.calculationMethod,
+            onSelect = { method ->
+                onCalculationMethodChange(method)
+                showCalcMethodDialog = false
+            },
+            onDismiss = { showCalcMethodDialog = false }
+        )
+    }
 }
 
 @Composable
-fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-    )
+fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+    Row(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
 }
 
 

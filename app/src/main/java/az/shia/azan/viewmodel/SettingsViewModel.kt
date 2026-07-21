@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import az.shia.azan.data.AppSettings
 import az.shia.azan.data.AzanSound
+import az.shia.azan.data.CalculationMethod
 import az.shia.azan.data.PreferencesManager
 import az.shia.azan.data.PrayerType
 import kotlinx.coroutines.flow.SharingStarted
@@ -95,6 +96,24 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setBatteryOptimizationDisabled(disabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.setBatteryOptimizationDisabled(disabled)
+        }
+    }
+    
+    /**
+     * Daimi bildirişi dəyiş
+     */
+    fun toggleOngoingNotification(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setOngoingNotificationEnabled(enabled)
+        }
+    }
+    
+    /**
+     * Hesablama metodunu dəyiş
+     */
+    fun changeCalculationMethod(method: CalculationMethod) {
+        viewModelScope.launch {
+            preferencesManager.setCalculationMethod(method)
         }
     }
     

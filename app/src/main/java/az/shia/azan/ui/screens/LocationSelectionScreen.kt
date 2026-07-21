@@ -67,7 +67,7 @@ fun LocationSelectionScreen(
                 modifier = Modifier.background(appBarGradient)
             ) {
                 TopAppBar(
-                    title = { Text("📍 Şəhər Seçimi") },
+                    title = { Text("Şəhər Seçimi") },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(

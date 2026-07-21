@@ -1,12 +1,13 @@
 package az.shia.azan.notification
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.media.RingtoneManager
 import android.os.Build
+import android.graphics.BitmapFactory
 import androidx.core.app.NotificationCompat
 import az.shia.azan.MainActivity
 import az.shia.azan.R
@@ -18,7 +19,7 @@ import az.shia.azan.data.PrayerType
 class NotificationHelper(private val context: Context) {
     
     companion object {
-        const val CHANNEL_ID = "azan_notifications"
+        const val CHANNEL_ID = "azan_notifications_v3"
         const val CHANNEL_NAME = "Azan Bildirişləri"
         const val NOTIFICATION_ID = 1001
     }
@@ -42,10 +43,9 @@ class NotificationHelper(private val context: Context) {
             ).apply {
                 description = "Namaz vaxtı bildirişləri"
                 enableVibration(true)
-                setSound(
-                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
-                    null
-                )
+                setSound(null, null)
+                setShowBadge(true)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             
             notificationManager.createNotificationChannel(channel)
@@ -82,7 +82,8 @@ class NotificationHelper(private val context: Context) {
         
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("🕌 $prayerName vaxtıdır")
+            .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.drawable.app_logo))
+            .setContentTitle("$prayerName vaxtıdır")
             .setContentText("$prayerName namazı vaxtı: $time")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -93,8 +94,8 @@ class NotificationHelper(private val context: Context) {
                 "Azan oxut",
                 playPendingIntent
             )
-            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
             .setVibrate(longArrayOf(0, 500, 200, 500))
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
         
         notificationManager.notify(NOTIFICATION_ID + prayerType.ordinal, notification)
@@ -117,7 +118,7 @@ class NotificationHelper(private val context: Context) {
         
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("⏰ Xatırlatma")
+            .setContentTitle("Xatırlatma")
             .setContentText("$prayerName namazına $timeRemaining qalıb")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)

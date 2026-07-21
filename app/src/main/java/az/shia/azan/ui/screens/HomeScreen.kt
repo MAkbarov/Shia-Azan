@@ -1,5 +1,6 @@
 package az.shia.azan.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -14,8 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.shia.azan.R
 import az.shia.azan.data.PrayerTime
 import az.shia.azan.ui.components.NextPrayerCard
 import az.shia.azan.ui.components.PrayerTimeCard
@@ -67,17 +70,26 @@ fun HomeScreen(
             Box(modifier = Modifier.background(appBarGradient)) {
                 TopAppBar(
                     title = {
-                        Column {
-                            Text(
-                                text = "🕌 Şiə Azan",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp)
                             )
-                            Text(
-                                text = TimeFormatter.formatDate(Calendar.getInstance()),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.85f)
-                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "XIV Azan",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = TimeFormatter.formatDate(Calendar.getInstance()),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.85f)
+                                )
+                            }
                         }
                     },
                     actions = {

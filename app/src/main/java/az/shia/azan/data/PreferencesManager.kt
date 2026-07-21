@@ -41,6 +41,17 @@ class PreferencesManager(private val context: Context) {
         
         // Arxa fon
         val BATTERY_OPT_DISABLED = booleanPreferencesKey("battery_opt_disabled")
+        
+        // Daimi Bildiriş
+        val ONGOING_NOTIFICATION = booleanPreferencesKey("ongoing_notification")
+        
+        // Hesablama Metodu
+        val CALC_METHOD = stringPreferencesKey("calculation_method")
+        
+        // Yer məlumatı
+        val LAST_CITY = stringPreferencesKey("last_city")
+        val LAST_LAT = floatPreferencesKey("last_lat")
+        val LAST_LNG = floatPreferencesKey("last_lng")
     }
     
     /**
@@ -67,7 +78,13 @@ class PreferencesManager(private val context: Context) {
             use24HourFormat = preferences[USE_24_HOUR] ?: true,
             showHijriDate = preferences[SHOW_HIJRI] ?: true,
             
-            batteryOptimizationDisabled = preferences[BATTERY_OPT_DISABLED] ?: false
+            batteryOptimizationDisabled = preferences[BATTERY_OPT_DISABLED] ?: false,
+            ongoingNotificationEnabled = preferences[ONGOING_NOTIFICATION] ?: false,
+            calculationMethod = try {
+                CalculationMethod.valueOf(preferences[CALC_METHOD] ?: "LEVA_QUM")
+            } catch (e: Exception) {
+                CalculationMethod.LEVA_QUM
+            }
         )
     }
     
@@ -149,6 +166,45 @@ class PreferencesManager(private val context: Context) {
     suspend fun setBatteryOptimizationDisabled(disabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[BATTERY_OPT_DISABLED] = disabled
+        }
+    }
+    
+    /**
+     * Daimi bildirişi aktivləşdir/söndür
+     */
+    suspend fun setOngoingNotificationEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ONGOING_NOTIFICATION] = enabled
+        }
+    }
+    
+    /**
+     * Son seçilmiş şəhəri saxla
+     */
+    suspend fun setLastLocation(location: LocationData) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_CITY] = location.cityName
+            preferences[LAST_LAT] = location.latitude.toFloat()
+            preferences[LAST_LNG] = location.longitude.toFloat()
+        }
+    }
+    
+    /**
+     * Son seçilmiş şəhəri al
+     */
+    fun getLastLocation(): Flow<LocationData?> = context.dataStore.data.map { preferences ->
+        val city = preferences[LAST_CITY] ?: return@map null
+        val lat = preferences[LAST_LAT] ?: 0f
+        val lng = preferences[LAST_LNG] ?: 0f
+        LocationData(lat.toDouble(), lng.toDouble(), city, "")
+    }
+    
+    /**
+     * Hesablama metodunu dəyiş
+     */
+    suspend fun setCalculationMethod(method: CalculationMethod) {
+        context.dataStore.edit { preferences ->
+            preferences[CALC_METHOD] = method.name
         }
     }
     

@@ -4,26 +4,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.shia.azan.calculator.PrayerTimesCalculator
 import az.shia.azan.data.ShiaCities
+import az.shia.azan.data.CalculationMethod
 import az.shia.azan.data.DailyPrayerTimes
 import az.shia.azan.data.LocationData
 import az.shia.azan.data.PrayerTime
+import az.shia.azan.data.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
 /**
  * Namaz vaxtları üçün ViewModel
  */
-class PrayerTimesViewModel : ViewModel() {
+class PrayerTimesViewModel(application: android.app.Application) : androidx.lifecycle.AndroidViewModel(application) {
     
     private val calculator = PrayerTimesCalculator()
+    private val preferencesManager = PreferencesManager(application)
     
     private val _prayerTimes = MutableStateFlow<DailyPrayerTimes?>(null)
     val prayerTimes: StateFlow<DailyPrayerTimes?> = _prayerTimes.asStateFlow()
     
-    private val _selectedLocation = MutableStateFlow(ShiaCities.getDefaultCity())
+    private val _selectedLocation = MutableStateFlow(az.shia.azan.data.ShiaCities.getDefaultCity())
     val selectedLocation: StateFlow<LocationData> = _selectedLocation.asStateFlow()
     
     private val _nextPrayer = MutableStateFlow<PrayerTime?>(null)
@@ -33,18 +39,34 @@ class PrayerTimesViewModel : ViewModel() {
     val currentTime: StateFlow<Calendar> = _currentTime.asStateFlow()
     
     init {
-        loadPrayerTimes()
+        viewModelScope.launch {
+            // Son saxlanılmış şəhəri yüklə
+            preferencesManager.getLastLocation().firstOrNull()?.let {
+                _selectedLocation.value = it
+            }
+            
+            // Parametrləri izlə (hesablama metodu dəyişdikdə yenidən hesabla)
+            launch {
+                preferencesManager.settingsFlow.collectLatest { settings ->
+                    loadPrayerTimes(settings.calculationMethod)
+                }
+            }
+        }
     }
     
     /**
      * Namaz vaxtlarını yüklə
      */
-    fun loadPrayerTimes() {
+    fun loadPrayerTimes(method: CalculationMethod? = null) {
         viewModelScope.launch {
             try {
+                // Əgər metod verilməyibsə, cari settings-dən götür
+                val currentMethod = method ?: preferencesManager.settingsFlow.first().calculationMethod
+                
                 val times = calculator.calculatePrayerTimes(
                     date = Calendar.getInstance(),
-                    location = _selectedLocation.value
+                    location = _selectedLocation.value,
+                    method = currentMethod
                 )
                 _prayerTimes.value = times
                 updateNextPrayer()
@@ -62,6 +84,9 @@ class PrayerTimesViewModel : ViewModel() {
      */
     fun selectLocation(location: LocationData) {
         _selectedLocation.value = location
+        viewModelScope.launch {
+            preferencesManager.setLastLocation(location)
+        }
         loadPrayerTimes()
     }
     

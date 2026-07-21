@@ -42,6 +42,6 @@ val GradientMiddle = Color(0xFF8E24AA)
 val GradientEnd = Color(0xFFAB47BC)
 
 // Dark Mode Gradient
-val GradientDarkStart = Color(0xFF1A0B1F)
+val GradientDarkStart = Color(0xFF2D1B33)
 val GradientDarkMiddle = Color(0xFF4A148C)
 val GradientDarkEnd = Color(0xFF6A1B9A)

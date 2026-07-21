@@ -21,6 +21,7 @@ import az.shia.azan.data.PrayerTime
 import az.shia.azan.location.LocationHelper
 import az.shia.azan.notification.AlarmScheduler
 import az.shia.azan.service.AzanService
+import az.shia.azan.service.OngoingNotificationService
 import az.shia.azan.ui.components.AzanPlayerDialog
 import az.shia.azan.ui.screens.HomeScreen
 import az.shia.azan.ui.screens.LocationSelectionScreen
@@ -91,6 +92,15 @@ class MainActivity : ComponentActivity() {
                 val selectedLocation by viewModel.selectedLocation.collectAsState()
                 val settings by settingsViewModel.settings.collectAsState()
                 
+                // Daimi bildiriş servisini idarə et
+                LaunchedEffect(settings.ongoingNotificationEnabled) {
+                    if (settings.ongoingNotificationEnabled) {
+                        OngoingNotificationService.startService(this@MainActivity)
+                    } else {
+                        OngoingNotificationService.stopService(this@MainActivity)
+                    }
+                }
+                
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -119,6 +129,12 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onHijriToggle = { enabled ->
                                     settingsViewModel.toggleHijriDate(enabled)
+                                },
+                                onOngoingNotificationToggle = { enabled ->
+                                    settingsViewModel.toggleOngoingNotification(enabled)
+                                },
+                                onCalculationMethodChange = { method ->
+                                    settingsViewModel.changeCalculationMethod(method)
                                 },
                                 onBatteryOptimizationClick = {
                                     batteryOptimizationHelper.requestIgnoreBatteryOptimizations()

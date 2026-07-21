@@ -24,8 +24,28 @@ data class AppSettings(
     val showHijriDate: Boolean = true,
     
     // Arxa fon
-    val batteryOptimizationDisabled: Boolean = false
+    val batteryOptimizationDisabled: Boolean = false,
+    
+    // Daimi Bildiriş
+    val ongoingNotificationEnabled: Boolean = false,
+    
+    // Hesablama Metodu
+    val calculationMethod: CalculationMethod = CalculationMethod.LEVA_QUM
 )
+
+/**
+ * Hesablama metodları
+ */
+enum class CalculationMethod(
+    val displayName: String,
+    val fajrAngle: Double,
+    val maghribAngle: Double,
+    val ishaAngle: Double
+) {
+    LEVA_QUM("Qum (Leva İnstitutu)", 16.0, 4.0, 14.0),
+    TEHRAN("Tehran (Geofizika İnstitutu)", 17.7, 4.5, 14.0),
+    STANDARD("Standart Şiə Metodu", 16.0, 4.0, 14.0)
+}
 
 /**
  * Azan səsi növləri

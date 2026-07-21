@@ -53,7 +53,10 @@ class AzanReceiver : BroadcastReceiver() {
             val notificationHelper = NotificationHelper(context)
             notificationHelper.showPrayerNotification(prayerType, prayerName, prayerTime)
             
-            Log.d(TAG, "Prayer notification shown: $prayerName at $prayerTime")
+            // Azanı dərhal başlat
+            handlePlayAzan(context, intent)
+            
+            Log.d(TAG, "Prayer notification shown and Azan started: $prayerName at $prayerTime")
         } catch (e: Exception) {
             Log.e(TAG, "Error handling prayer time", e)
         }

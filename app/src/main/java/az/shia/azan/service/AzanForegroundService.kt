@@ -7,6 +7,10 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -18,15 +22,15 @@ import az.shia.azan.data.PrayerType
 
 /**
  * 🔋 Arxa fonda azan oxutmaq üçün Foreground Service
- * Battery optimization-dan yan keçir
  */
 class AzanForegroundService : Service() {
     
     private lateinit var azanPlayer: AzanPlayer
     private var wakeLock: PowerManager.WakeLock? = null
+    private var audioManager: AudioManager? = null
     
     companion object {
-        const val CHANNEL_ID = "azan_foreground_service"
+        const val CHANNEL_ID = "azan_playback_channel"
         const val NOTIFICATION_ID = 2001
         
         const val ACTION_START_AZAN = "az.shia.azan.START_AZAN"
@@ -38,6 +42,7 @@ class AzanForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         azanPlayer = AzanPlayer(applicationContext)
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         createNotificationChannel()
         acquireWakeLock()
     }
@@ -48,6 +53,9 @@ class AzanForegroundService : Service() {
                 val prayerTypeName = intent.getStringExtra(EXTRA_PRAYER_TYPE)
                 val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: "Namaz"
                 
+                // Audio Focus tələb et (digər səsləri dayandırmaq üçün)
+                requestAudioFocus()
+                
                 // Foreground service başlat
                 startForeground(NOTIFICATION_ID, createForegroundNotification(prayerName))
                 
@@ -56,7 +64,6 @@ class AzanForegroundService : Service() {
                     try {
                         val prayerType = PrayerType.valueOf(it)
                         azanPlayer.playAzan(prayerType) {
-                            // Azan bitdikdə servisi dayandır
                             stopSelf()
                         }
                     } catch (e: Exception) {
@@ -71,8 +78,25 @@ class AzanForegroundService : Service() {
             }
         }
         
-        // Sistem servisi öldürsə, yenidən başlat
-        return START_STICKY
+        return START_NOT_STICKY
+    }
+    
+    private fun requestAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+            
+            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                .setAudioAttributes(audioAttributes)
+                .build()
+            
+            audioManager?.requestAudioFocus(focusRequest)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager?.requestAudioFocus(null, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+        }
     }
     
     override fun onDestroy() {
@@ -116,6 +140,7 @@ class AzanForegroundService : Service() {
             .setContentTitle("🕌 $prayerName Azanı")
             .setContentText("Azan oxunur...")
             .setSmallIcon(R.drawable.ic_notification)
+            .setLargeIcon(BitmapFactory.decodeResource(resources, R.drawable.app_logo))
             .setContentIntent(pendingIntent)
             .addAction(
                 R.drawable.ic_stop,
@@ -125,6 +150,7 @@ class AzanForegroundService : Service() {
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }
     

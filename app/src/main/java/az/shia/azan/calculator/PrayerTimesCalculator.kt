@@ -1,5 +1,6 @@
 package az.shia.azan.calculator
 
+import az.shia.azan.data.CalculationMethod
 import az.shia.azan.data.DailyPrayerTimes
 import az.shia.azan.data.LocationData
 import java.util.Calendar
@@ -13,8 +14,6 @@ class PrayerTimesCalculator {
     
     companion object {
         // Şiə hesablama metodları
-        private const val FAJR_ANGLE = 16.0        // Sübh üçün günəş bucağı (Şiə: 16°)
-        private const val ISHA_ANGLE = 14.0        // İşa üçün günəş bucağı (Şiə: 14°)
         private const val ASR_SHADOW_FACTOR = 1.0  // Əsr üçün kölgə faktoru (Şafi/Şiə: 1)
     }
     
@@ -23,7 +22,8 @@ class PrayerTimesCalculator {
      */
     fun calculatePrayerTimes(
         date: Calendar = Calendar.getInstance(),
-        location: LocationData
+        location: LocationData,
+        method: CalculationMethod = CalculationMethod.LEVA_QUM
     ): DailyPrayerTimes {
         val latitude = location.latitude
         val longitude = location.longitude
@@ -41,7 +41,7 @@ class PrayerTimesCalculator {
         
         // Digər namaz vaxtları
         val fajrTime = calculateTimeByAngle(
-            latitude, declination, FAJR_ANGLE, 
+            latitude, declination, method.fajrAngle, 
             dhuhrTime, timeZone, false
         )
         
@@ -56,12 +56,12 @@ class PrayerTimesCalculator {
         )
         
         val maghribTime = calculateTimeByAngle(
-            latitude, declination, 0.833, 
+            latitude, declination, method.maghribAngle, 
             dhuhrTime, timeZone, true
         )
         
         val ishaTime = calculateTimeByAngle(
-            latitude, declination, ISHA_ANGLE, 
+            latitude, declination, method.ishaAngle, 
             dhuhrTime, timeZone, true
         )
         

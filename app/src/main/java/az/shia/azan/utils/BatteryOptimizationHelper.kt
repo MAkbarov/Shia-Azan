@@ -83,7 +83,7 @@ class BatteryOptimizationHelper(private val activity: ComponentActivity) {
             
             ⚙️ Parametrlərdə:
             • "Batareya optimizasiyası"nı tapın
-            • "Şiə Azan"ı seçin
+            • "XIV Azan"ı seçin
             • "Optimizasiya etmə" seçin
             
             Bu, azanların vaxtında oxunmasını təmin edəcək.
