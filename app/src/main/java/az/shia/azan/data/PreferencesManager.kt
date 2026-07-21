@@ -38,9 +38,11 @@ class PreferencesManager(private val context: Context) {
         // Görünüş
         val USE_24_HOUR = booleanPreferencesKey("use_24_hour")
         val SHOW_HIJRI = booleanPreferencesKey("show_hijri")
+        val HIJRI_OFFSET_DAYS = intPreferencesKey("hijri_offset_days")
         
         // Arxa fon
         val BATTERY_OPT_DISABLED = booleanPreferencesKey("battery_opt_disabled")
+        val AUTOMATIC_UPDATES = booleanPreferencesKey("automatic_updates")
         
         // Daimi Bildiriş
         val ONGOING_NOTIFICATION = booleanPreferencesKey("ongoing_notification")
@@ -79,8 +81,10 @@ class PreferencesManager(private val context: Context) {
             
             use24HourFormat = preferences[USE_24_HOUR] ?: true,
             showHijriDate = preferences[SHOW_HIJRI] ?: true,
+            hijriOffsetDays = (preferences[HIJRI_OFFSET_DAYS] ?: 0).coerceIn(-7, 7),
             
             batteryOptimizationDisabled = preferences[BATTERY_OPT_DISABLED] ?: false,
+            automaticUpdatesEnabled = preferences[AUTOMATIC_UPDATES] ?: true,
             ongoingNotificationEnabled = preferences[ONGOING_NOTIFICATION] ?: false,
             calculationMethod = try {
                 CalculationMethod.valueOf(preferences[CALC_METHOD] ?: "LEVA_QUM")
@@ -154,11 +158,24 @@ class PreferencesManager(private val context: Context) {
     }
     
     /**
-     * Hicri tarix göstərişini dəyiş
+     * Hicri tarixi göstər/gizlət.
      */
     suspend fun setShowHijriDate(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[SHOW_HIJRI] = enabled
+        }
+    }
+
+    /** Ay müşahidəsi fərqini -7...+7 gün aralığında saxla. */
+    suspend fun setHijriOffsetDays(offsetDays: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[HIJRI_OFFSET_DAYS] = offsetDays.coerceIn(-7, 7)
+        }
+    }
+
+    suspend fun setAutomaticUpdatesEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTOMATIC_UPDATES] = enabled
         }
     }
     

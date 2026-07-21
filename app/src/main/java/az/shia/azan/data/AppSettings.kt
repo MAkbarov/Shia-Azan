@@ -22,9 +22,11 @@ data class AppSettings(
     // Görünüş
     val use24HourFormat: Boolean = true,
     val showHijriDate: Boolean = true,
+    val hijriOffsetDays: Int = 0,
     
     // Arxa fon
     val batteryOptimizationDisabled: Boolean = false,
+    val automaticUpdatesEnabled: Boolean = true,
     
     // Daimi Bildiriş
     val ongoingNotificationEnabled: Boolean = false,

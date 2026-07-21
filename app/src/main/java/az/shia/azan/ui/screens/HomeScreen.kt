@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.shia.azan.R
+import az.shia.azan.data.AppSettings
 import az.shia.azan.data.PrayerTime
 import az.shia.azan.ui.components.NextPrayerCard
 import az.shia.azan.ui.components.PrayerTimeCard
@@ -28,6 +29,7 @@ import az.shia.azan.ui.theme.GradientDarkStart
 import az.shia.azan.ui.theme.GradientEnd
 import az.shia.azan.ui.theme.GradientStart
 import az.shia.azan.ui.theme.PillShape
+import az.shia.azan.utils.HijriDateFormatter
 import az.shia.azan.utils.TimeFormatter
 import az.shia.azan.viewmodel.PrayerTimesViewModel
 import java.util.Calendar
@@ -39,6 +41,7 @@ import java.util.Calendar
 @Composable
 fun HomeScreen(
     viewModel: PrayerTimesViewModel,
+    settings: AppSettings,
     onPlayAzan: (PrayerTime) -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onLocationClick: () -> Unit = {}
@@ -87,7 +90,7 @@ fun HomeScreen(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = TimeFormatter.formatDate(Calendar.getInstance()),
+                                    text = "Namaz vaxtları",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.White.copy(alpha = 0.85f)
                                 )
@@ -132,6 +135,14 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
+                    item {
+                        CalendarOverviewCard(
+                            currentTime = currentTime,
+                            showHijriDate = settings.showHijriDate,
+                            hijriOffsetDays = settings.hijriOffsetDays
+                        )
+                    }
+
                     // Şəhər məlumatı - premium "pill" görünüş
                     item {
                         Box(
@@ -217,5 +228,77 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CalendarOverviewCard(
+    currentTime: Calendar,
+    showHijriDate: Boolean,
+    hijriOffsetDays: Int
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = CardShape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CalendarDateColumn(
+                label = "MİLADİ",
+                value = TimeFormatter.formatDate(currentTime),
+                modifier = Modifier.weight(1f)
+            )
+
+            if (showHijriDate) {
+                Divider(
+                    modifier = Modifier
+                        .height(46.dp)
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+                CalendarDateColumn(
+                    label = "HİCRİ-QƏMƏRİ",
+                    value = HijriDateFormatter.format(currentTime, hijriOffsetDays),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarDateColumn(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

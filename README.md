@@ -8,13 +8,13 @@
 
 ## APK yüklə / Download APK
 
-[![XIV Azan v1.0 APK yüklə](https://img.shields.io/badge/XIV_Azan-v1.0_APK-21C4C3?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MAkbarov/Shia-Azan/raw/refs/heads/master/download/XIV-Azan-v1.0.apk)
+[![XIV Azan APK yüklə](https://img.shields.io/badge/XIV_Azan-Son_APK-21C4C3?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MAkbarov/Shia-Azan/releases/latest/download/XIV-Azan.apk)
 
-**AZ:** APK faylını birbaşa GitHub-dan yükləmək üçün yuxarıdakı düyməyə toxunun. Android quraşdırma zamanı brauzer üçün “Naməlum tətbiqləri quraşdır” icazəsi istəyə bilər.
+**Son versiya / Latest:** v1.0.1
 
-**EN:** Tap the button above to download the APK directly from GitHub. Android may ask you to allow “Install unknown apps” for your browser during installation.
+**AZ:** Ən son APK-ni birbaşa GitHub buraxılışından yükləmək üçün yuxarıdakı düyməyə toxunun. Bu link həmişə ən son versiyaya yönləndirir. Android quraşdırma zamanı brauzer üçün “Naməlum tətbiqləri quraşdır” icazəsi istəyə bilər. Tətbiq quraşdırıldıqdan sonra yeniləmələr avtomatik yoxlanılır və Parametrlər → Tətbiq Yeniləməsi bölməsindən idarə oluna bilər.
 
-**SHA-256:** `697EFFE9ECC20328FC23EC91B394FE0AAC6C823FA38282829B77DC9401B814B0`
+**EN:** Tap the button above to download the latest APK directly from the GitHub release. This link always points to the newest version. Android may ask you to allow “Install unknown apps” during installation. After installing, updates are checked automatically and can be managed from Settings → App Update.
 
 [Azərbaycan dili](#azərbaycan-dili) · [English](#english)
 
@@ -38,6 +38,9 @@ Tətbiqdə sabit cədvəl istifadə edilmir. Məkan və tarix dəyişdikdə vaxt
 - Azərbaycan şəhər və rayonları, eləcə də seçilmiş xarici Şiə mərkəzləri
 - Dəqiq alarm və namaz vaxtı bildirişləri
 - Status paneli və kilid ekranında daimi namaz bildirişi
+- Miladi və Hicri-qəməri tarixin ana səhifədə yanaşı göstərilməsi
+- Hicri tarixin −7…+7 gün aralığında ay müşahidəsinə uyğun tənzimlənməsi
+- GitHub buraxılışlarından avtomatik yeniləmə yoxlaması və təhlükəsiz APK quraşdırması
 - Arxa fonda azan oxudulması
 - Azan səsi və səs səviyyəsi seçimi
 - Material 3 və Jetpack Compose ilə hazırlanmış interfeys
@@ -116,6 +119,10 @@ app/src/main/java/az/shia/azan/
 └── viewmodel/      # UI state və tətbiq məntiqi
 ```
 
+### Yeniləmə necə işləyir
+
+Tətbiq GitHub buraxılışlarını periodik yoxlayır. Yeni versiya olduqda APK tətbiqin özəl qovluğuna endirilir, paket adı, versiya və imza sertifikatı yoxlanır, sonra quraşdırma bildirişi göstərilir. Avtomatik quraşdırma alınmasa (məsələn, bildiriş icazəsi bağlıdırsa), bildiriş və Parametrlər bölməsi GitHub buraxılış səhifəsinə yönləndirir; oradan APK-ni əl ilə endirib köhnə versiyanın üzərinə quraşdırmaq olar.
+
 ### Müəllif və əlaqə
 
 XIV Azan **DeXIV** tərəfindən hazırlanır və inkişaf etdirilir.
@@ -142,6 +149,9 @@ The app does not rely on a fixed timetable. Prayer times are recalculated when t
 - Azerbaijani cities and districts, plus selected international Shia centers
 - Exact alarms and prayer-time notifications
 - Persistent prayer information in the status area and on the lock screen
+- Gregorian and Hijri (lunar) dates shown side by side on the home screen
+- Hijri date adjustable within −7…+7 days for local moon sighting
+- Automatic update checks from GitHub releases with verified APK installation
 - Background azan playback
 - Selectable azan voice and volume
 - Material 3 interface built with Jetpack Compose

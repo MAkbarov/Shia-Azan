@@ -90,7 +90,9 @@ class MainActivity : ComponentActivity() {
                 val composeScope = rememberCoroutineScope()
                 val isPlaying by azanPlayer.isPlaying.collectAsState()
                 val selectedLocation by viewModel.selectedLocation.collectAsState()
+                val currentTime by viewModel.currentTime.collectAsState()
                 val settings by settingsViewModel.settings.collectAsState()
+                val updateState by settingsViewModel.updateState.collectAsState()
 
                 val locateCurrentPosition: () -> Unit = {
                     if (!isLocating) {
@@ -160,6 +162,8 @@ class MainActivity : ComponentActivity() {
                         when (screen) {
                             AppScreen.SETTINGS -> SettingsScreen(
                                 settings = settings,
+                                currentTime = currentTime,
+                                updateState = updateState,
                                 onPrayerNotificationToggle = settingsViewModel::togglePrayerNotification,
                                 onAzanSoundChange = settingsViewModel::changeAzanSound,
                                 onVolumeChange = settingsViewModel::changeVolume,
@@ -167,7 +171,12 @@ class MainActivity : ComponentActivity() {
                                 onReminderTimeChange = settingsViewModel::changeReminderTime,
                                 on24HourToggle = settingsViewModel::toggle24HourFormat,
                                 onHijriToggle = settingsViewModel::toggleHijriDate,
+                                onHijriOffsetChange = settingsViewModel::changeHijriOffset,
                                 onOngoingNotificationToggle = settingsViewModel::toggleOngoingNotification,
+                                onAutomaticUpdatesToggle = settingsViewModel::toggleAutomaticUpdates,
+                                onCheckForUpdates = settingsViewModel::checkForUpdates,
+                                onDownloadUpdate = settingsViewModel::downloadLatestUpdate,
+                                onOpenReleases = settingsViewModel::openReleasesPage,
                                 onCalculationMethodChange = settingsViewModel::changeCalculationMethod,
                                 onBatteryOptimizationClick = {
                                     batteryOptimizationHelper.requestIgnoreBatteryOptimizations()
@@ -198,6 +207,7 @@ class MainActivity : ComponentActivity() {
 
                             AppScreen.HOME -> HomeScreen(
                                 viewModel = viewModel,
+                                settings = settings,
                                 onPlayAzan = { prayer ->
                                     selectedPrayer = prayer
                                     azanPlayer.playAzan(
