@@ -27,9 +27,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,12 +57,76 @@ import az.shia.azan.ui.screens.HomeScreen
 import az.shia.azan.ui.screens.LocationSelectionScreen
 import az.shia.azan.ui.screens.SettingsScreen
 import az.shia.azan.ui.theme.ShiaAzanTheme
+import az.shia.azan.update.UpdateInstaller
 import az.shia.azan.utils.BatteryOptimizationHelper
+import az.shia.azan.viewmodel.ForegroundUpdate
 import az.shia.azan.viewmodel.PrayerTimesViewModel
 import az.shia.azan.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
 private enum class AppScreen { HOME, LOCATION, SETTINGS }
+
+/** Tətbiqdaxili yeniləmə dialoqu: yoxla → endir → quraşdır, GitHub fallback ilə. */
+@Composable
+private fun UpdateFlowDialog(
+    state: ForegroundUpdate,
+    onUpdateNow: () -> Unit,
+    onInstall: (String) -> Unit,
+    onOpenGitHub: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (state is ForegroundUpdate.Idle) return
+
+    // APK hazır olan kimi sistem quraşdırıcısını avtomatik aç.
+    if (state is ForegroundUpdate.ReadyToInstall) {
+        LaunchedEffect(state.apkPath) { onInstall(state.apkPath) }
+    }
+
+    val info = when (state) {
+        is ForegroundUpdate.Available -> state.info
+        is ForegroundUpdate.Downloading -> state.info
+        is ForegroundUpdate.ReadyToInstall -> state.info
+        is ForegroundUpdate.Failed -> state.info
+        ForegroundUpdate.Idle -> return
+    }
+    val downloading = state is ForegroundUpdate.Downloading
+
+    AlertDialog(
+        onDismissRequest = { if (!downloading) onDismiss() },
+        title = { Text("Yeni versiya: v${info.version}") },
+        text = {
+            when (state) {
+                is ForegroundUpdate.Downloading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.width(22.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Yeniləmə endirilir…")
+                }
+                is ForegroundUpdate.ReadyToInstall ->
+                    Text("Yeniləmə hazırdır. Quraşdırmanı təsdiqləyin.")
+                is ForegroundUpdate.Failed ->
+                    Text("${state.message}\n\nGitHub-dan əl ilə endirib köhnənin üstünə quraşdıra bilərsiniz.")
+                else ->
+                    Text("Tətbiqin yeni versiyası mövcuddur. İndi yeniləmək istəyirsiniz?")
+            }
+        },
+        confirmButton = {
+            when (state) {
+                is ForegroundUpdate.Available -> Button(onClick = onUpdateNow) { Text("İndi yenilə") }
+                is ForegroundUpdate.ReadyToInstall ->
+                    Button(onClick = { onInstall(state.apkPath) }) { Text("Quraşdır") }
+                is ForegroundUpdate.Failed -> Button(onClick = onOpenGitHub) { Text("GitHub-da aç") }
+                else -> {}
+            }
+        },
+        dismissButton = {
+            if (!downloading) {
+                TextButton(onClick = onDismiss) {
+                    Text(if (state is ForegroundUpdate.Failed) "Bağla" else "Sonra")
+                }
+            }
+        }
+    )
+}
 
 /** Yenilənmədən sonra 4 saniyəlik firuzəyi toast (mətn ağ). */
 @Composable
@@ -192,7 +263,11 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val justUpdatedVersion by settingsViewModel.justUpdatedVersion.collectAsState()
+                val foregroundUpdate by settingsViewModel.foregroundUpdate.collectAsState()
                 var previewingSound by remember { mutableStateOf<az.shia.azan.data.AzanSound?>(null) }
+
+                // Açılışda bir dəfə tətbiqdaxili yeniləmə yoxlaması (WorkManager-dən asılı deyil).
+                LaunchedEffect(Unit) { settingsViewModel.autoCheckOnLaunch() }
 
                 // Preview bitəndə (və ya dayandırılanda) play ikonlarını sıfırla.
                 LaunchedEffect(isPlaying) {
@@ -336,6 +411,26 @@ class MainActivity : ComponentActivity() {
                         version = justUpdatedVersion,
                         onDismiss = settingsViewModel::clearUpdateToast,
                         modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+
+                    UpdateFlowDialog(
+                        state = foregroundUpdate,
+                        onUpdateNow = {
+                            if (UpdateInstaller.canRequestInstall(this@MainActivity)) {
+                                settingsViewModel.startForegroundDownload()
+                            } else {
+                                UpdateInstaller.requestInstallPermission(this@MainActivity)
+                            }
+                        },
+                        onInstall = { path ->
+                            val launched = UpdateInstaller.launchInstaller(
+                                this@MainActivity,
+                                java.io.File(path)
+                            )
+                            if (!launched) settingsViewModel.openUpdateReleasePage()
+                        },
+                        onOpenGitHub = settingsViewModel::openUpdateReleasePage,
+                        onDismiss = settingsViewModel::dismissForegroundUpdate
                     )
                   }
                 }

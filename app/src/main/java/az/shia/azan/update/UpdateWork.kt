@@ -43,7 +43,7 @@ object UpdateScheduler {
         WorkManager.getInstance(appContext).apply {
             enqueueUniqueWork(
                 UpdateWorkNames.CHECK_NOW,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.REPLACE,
                 immediate
             )
             enqueueUniquePeriodicWork(

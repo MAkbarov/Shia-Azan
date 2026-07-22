@@ -96,9 +96,7 @@ class UpdateDownloadWorker(
         val info = UpdateDownloader.readInfo(inputData) ?: return Result.failure()
         var temporaryFile: File? = null
         return try {
-            val apk = withContext(Dispatchers.IO) {
-                downloadAndVerify(info) { temporaryFile = it }
-            }
+            val apk = downloadVerifiedApk(applicationContext, info) { temporaryFile = it }
             UpdateNotificationHelper.showVerifiedApkReady(applicationContext, info, apk)
             Result.success()
         } catch (cancelled: CancellationException) {
@@ -132,99 +130,107 @@ class UpdateDownloadWorker(
         }
     }
 
-    private fun downloadAndVerify(info: UpdateInfo, onTempFile: (File) -> Unit): File {
-        val downloadUrl = GitHubUrlPolicy.parseAllowed(info.downloadUrl)
-            ?.toExternalForm()
-            ?: throw SecurityException("Yalnız icazəli GitHub HTTPS ünvanları qəbul edilir.")
-        val safeVersion = info.version
-            .replace(Regex("[^0-9A-Za-z._-]"), "_")
-            .trim('.', '_', '-')
-            .take(80)
-            .takeIf(String::isNotEmpty)
-            ?: throw IOException("Versiya fayl adı üçün etibarsızdır.")
-
-        val updatesDirectory = File(applicationContext.filesDir, "updates")
-        if ((!updatesDirectory.exists() && !updatesDirectory.mkdirs()) || !updatesDirectory.isDirectory) {
-            throw IOException("Yeniləmə qovluğu yaradıla bilmədi.")
-        }
-        val canonicalDirectory = updatesDirectory.canonicalFile
-        val destination = File(canonicalDirectory, "XIV-Azan-$safeVersion.apk").canonicalFile
-        if (destination.parentFile != canonicalDirectory) {
-            throw SecurityException("Etibarsız yeniləmə fayl yolu.")
-        }
-
-        if (destination.exists()) {
-            val existing = ApkVerifier.verify(applicationContext, destination)
-            if (existing.valid) return destination
-            if (!destination.delete() && destination.exists()) {
-                throw IOException("Etibarsız köhnə APK faylı silinə bilmədi.")
-            }
-        }
-
-        // Keep the temporary name APK-parseable for PackageManager verification.
-        val temporary = File(canonicalDirectory, ".XIV-Azan-$safeVersion.part.apk")
-        onTempFile(temporary)
-        temporary.delete()
-
-        try {
-            downloadToTemporaryFile(downloadUrl, temporary)
-            val verification = ApkVerifier.verify(applicationContext, temporary)
-            if (!verification.valid) {
-                throw SecurityException(verification.message)
-            }
-            Os.rename(temporary.absolutePath, destination.absolutePath)
-            return destination
-        } finally {
-            if (temporary.exists()) temporary.delete()
-        }
-    }
-
-    private fun downloadToTemporaryFile(downloadUrl: String, temporary: File) {
-        val connection = GitHubNetwork.openFollowingRedirects(
-            downloadUrl,
-            "application/vnd.android.package-archive, application/octet-stream;q=0.9"
-        )
-        try {
-            if (connection.responseCode !in 200..299) {
-                throw IOException("APK endirilməsi HTTP ${connection.responseCode} xətası verdi.")
-            }
-            val declaredLength = connection.contentLengthLong
-            if (declaredLength > MAX_APK_BYTES) {
-                throw IOException("APK icazə verilən ölçüdən böyükdür.")
-            }
-
-            var total = 0L
-            BufferedInputStream(connection.inputStream).use { input ->
-                FileOutputStream(temporary).use { fileOutput ->
-                    val output = BufferedOutputStream(fileOutput)
-                    val buffer = ByteArray(32 * 1024)
-                    while (true) {
-                        val count = input.read(buffer)
-                        if (count < 0) break
-                        total += count
-                        if (total > MAX_APK_BYTES) {
-                            throw IOException("APK icazə verilən ölçüdən böyükdür.")
-                        }
-                        output.write(buffer, 0, count)
-                    }
-                    output.flush()
-                    fileOutput.fd.sync()
-                }
-            }
-            // Content-Length bəzən yanlış/olmaya bilər; bütövlüyü aşağıdakı
-            // PackageManager/imza yoxlaması təmin edir, ona görə burada yalnız
-            // tamam boş cavabı rədd edirik.
-            if (total <= 0L) {
-                throw IOException("APK məzmunu boş endirildi.")
-            }
-        } finally {
-            connection.disconnect()
-        }
-    }
-
     private companion object {
-        const val MAX_APK_BYTES = 512L * 1024L * 1024L
         const val MAX_ATTEMPTS = 5
+    }
+}
+
+private const val MAX_APK_BYTES = 512L * 1024L * 1024L
+
+/**
+ * APK-ni tətbiqin özəl qovluğuna endirir, paket/versiya/imza yoxlamasından
+ * keçirir və yoxlanılmış faylı qaytarır. Həm arxa fon worker-i, həm də
+ * tətbiqdaxili (foreground) yeniləmə bu funksiyanı istifadə edir.
+ */
+internal suspend fun downloadVerifiedApk(
+    context: Context,
+    info: UpdateInfo,
+    onTempFile: (File) -> Unit = {}
+): File = withContext(Dispatchers.IO) {
+    val appContext = context.applicationContext
+    val downloadUrl = GitHubUrlPolicy.parseAllowed(info.downloadUrl)
+        ?.toExternalForm()
+        ?: throw SecurityException("Yalnız icazəli GitHub HTTPS ünvanları qəbul edilir.")
+    val safeVersion = info.version
+        .replace(Regex("[^0-9A-Za-z._-]"), "_")
+        .trim('.', '_', '-')
+        .take(80)
+        .takeIf(String::isNotEmpty)
+        ?: throw IOException("Versiya fayl adı üçün etibarsızdır.")
+
+    val updatesDirectory = File(appContext.filesDir, "updates")
+    if ((!updatesDirectory.exists() && !updatesDirectory.mkdirs()) || !updatesDirectory.isDirectory) {
+        throw IOException("Yeniləmə qovluğu yaradıla bilmədi.")
+    }
+    val canonicalDirectory = updatesDirectory.canonicalFile
+    val destination = File(canonicalDirectory, "XIV-Azan-$safeVersion.apk").canonicalFile
+    if (destination.parentFile != canonicalDirectory) {
+        throw SecurityException("Etibarsız yeniləmə fayl yolu.")
+    }
+
+    if (destination.exists()) {
+        val existing = ApkVerifier.verify(appContext, destination)
+        if (existing.valid) return@withContext destination
+        if (!destination.delete() && destination.exists()) {
+            throw IOException("Etibarsız köhnə APK faylı silinə bilmədi.")
+        }
+    }
+
+    // Müvəqqəti ad APK-parseable qalsın deyə .apk uzantısını saxlayırıq.
+    val temporary = File(canonicalDirectory, ".XIV-Azan-$safeVersion.part.apk")
+    onTempFile(temporary)
+    temporary.delete()
+
+    try {
+        downloadToTemporaryFile(downloadUrl, temporary)
+        val verification = ApkVerifier.verify(appContext, temporary)
+        if (!verification.valid) {
+            throw SecurityException(verification.message)
+        }
+        Os.rename(temporary.absolutePath, destination.absolutePath)
+        destination
+    } finally {
+        if (temporary.exists()) temporary.delete()
+    }
+}
+
+private fun downloadToTemporaryFile(downloadUrl: String, temporary: File) {
+    val connection = GitHubNetwork.openFollowingRedirects(
+        downloadUrl,
+        "application/vnd.android.package-archive, application/octet-stream;q=0.9"
+    )
+    try {
+        if (connection.responseCode !in 200..299) {
+            throw IOException("APK endirilməsi HTTP ${connection.responseCode} xətası verdi.")
+        }
+        val declaredLength = connection.contentLengthLong
+        if (declaredLength > MAX_APK_BYTES) {
+            throw IOException("APK icazə verilən ölçüdən böyükdür.")
+        }
+
+        var total = 0L
+        BufferedInputStream(connection.inputStream).use { input ->
+            FileOutputStream(temporary).use { fileOutput ->
+                val output = BufferedOutputStream(fileOutput)
+                val buffer = ByteArray(32 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    total += count
+                    if (total > MAX_APK_BYTES) {
+                        throw IOException("APK icazə verilən ölçüdən böyükdür.")
+                    }
+                    output.write(buffer, 0, count)
+                }
+                output.flush()
+                fileOutput.fd.sync()
+            }
+        }
+        if (total <= 0L) {
+            throw IOException("APK məzmunu boş endirildi.")
+        }
+    } finally {
+        connection.disconnect()
     }
 }
 

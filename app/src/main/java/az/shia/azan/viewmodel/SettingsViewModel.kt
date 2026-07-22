@@ -21,6 +21,7 @@ import az.shia.azan.update.UpdateDownloader
 import az.shia.azan.update.UpdateInfo
 import az.shia.azan.update.UpdateRepository
 import az.shia.azan.update.UpdateScheduler
+import az.shia.azan.update.downloadVerifiedApk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,15 @@ data class UpdateUiState(
     val message: String = "Yeniləməni yoxlamaq üçün toxunun",
     val updateInfo: UpdateInfo? = null
 )
+
+/** Tətbiqdaxili (foreground) yeniləmə axını — WorkManager/bildirişdən asılı deyil. */
+sealed class ForegroundUpdate {
+    object Idle : ForegroundUpdate()
+    data class Available(val info: UpdateInfo) : ForegroundUpdate()
+    data class Downloading(val info: UpdateInfo) : ForegroundUpdate()
+    data class ReadyToInstall(val apkPath: String, val info: UpdateInfo) : ForegroundUpdate()
+    data class Failed(val message: String, val info: UpdateInfo) : ForegroundUpdate()
+}
 
 /** Parametrlər və tətbiq yeniləməsi state-i. */
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -72,6 +82,68 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun clearUpdateToast() {
         _justUpdatedVersion.value = null
+    }
+
+    private val _foregroundUpdate = MutableStateFlow<ForegroundUpdate>(ForegroundUpdate.Idle)
+    val foregroundUpdate: StateFlow<ForegroundUpdate> = _foregroundUpdate.asStateFlow()
+    private var launchCheckStarted = false
+
+    /** Tətbiq açılışında bir dəfə yoxla; yeni versiya varsa tətbiqdaxili dialoq göstər. */
+    fun autoCheckOnLaunch() {
+        if (launchCheckStarted) return
+        launchCheckStarted = true
+        viewModelScope.launch {
+            val enabled = runCatching {
+                preferencesManager.settingsFlow.first().automaticUpdatesEnabled
+            }.getOrDefault(true)
+            if (!enabled) return@launch
+            if (_foregroundUpdate.value != ForegroundUpdate.Idle) return@launch
+            val result = updateRepository.check(BuildConfig.VERSION_NAME)
+            if (result is UpdateCheckResult.Available) {
+                _foregroundUpdate.value = ForegroundUpdate.Available(result.info)
+            }
+        }
+    }
+
+    /** Dialoqda "İndi yenilə" — APK-ni endirib yoxlayır, hazır olduqda quraşdırmağa ötürür. */
+    fun startForegroundDownload() {
+        val info = when (val state = _foregroundUpdate.value) {
+            is ForegroundUpdate.Available -> state.info
+            is ForegroundUpdate.Failed -> state.info
+            else -> return
+        }
+        _foregroundUpdate.value = ForegroundUpdate.Downloading(info)
+        viewModelScope.launch {
+            _foregroundUpdate.value = try {
+                val apk = downloadVerifiedApk(getApplication(), info)
+                ForegroundUpdate.ReadyToInstall(apk.absolutePath, info)
+            } catch (e: Exception) {
+                ForegroundUpdate.Failed(
+                    e.message ?: "Yeniləmə endirilə bilmədi. GitHub-dan əl ilə endirin.",
+                    info
+                )
+            }
+        }
+    }
+
+    fun dismissForegroundUpdate() {
+        _foregroundUpdate.value = ForegroundUpdate.Idle
+    }
+
+    fun openUpdateReleasePage() {
+        val info = when (val state = _foregroundUpdate.value) {
+            is ForegroundUpdate.Available -> state.info
+            is ForegroundUpdate.Downloading -> state.info
+            is ForegroundUpdate.ReadyToInstall -> state.info
+            is ForegroundUpdate.Failed -> state.info
+            else -> null
+        }
+        val url = info?.releaseUrl ?: "https://github.com/MAkbarov/Shia-Azan/releases/latest"
+        getApplication<Application>().startActivity(
+            Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        )
     }
 
     fun togglePrayerNotification(prayerType: PrayerType, enabled: Boolean) {
