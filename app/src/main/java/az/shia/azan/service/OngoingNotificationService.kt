@@ -57,6 +57,7 @@ class OngoingNotificationService : Service() {
         const val NOTIFICATION_ID = 3001
         const val ACTION_REFRESH = "az.shia.azan.action.REFRESH_PRAYER_TIMES"
         private const val REFRESH_REQUEST_CODE = 7301
+        private const val REPOST_REQUEST_CODE = 7302
 
         fun startService(context: Context) {
             startService(context, null)
@@ -211,6 +212,9 @@ class OngoingNotificationService : Service() {
             .setCustomBigContentView(createExpandedView(snapshot, remaining))
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setContentIntent(pendingIntent)
+            // Android 13+ FGS bildirişini sürüşdürməklə silmək olar; silinsə,
+            // deleteIntent servisi yenidən post etməyə məcbur edir → daimi qalır.
+            .setDeleteIntent(repostPendingIntent())
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }
@@ -302,6 +306,19 @@ class OngoingNotificationService : Service() {
             PendingIntent.getForegroundService(this, REFRESH_REQUEST_CODE, intent, flags)
         } else {
             PendingIntent.getService(this, REFRESH_REQUEST_CODE, intent, flags)
+        }
+    }
+
+    /** Bildiriş silinəndə servisi yenidən post etməyə yönləndirir. */
+    private fun repostPendingIntent(): PendingIntent {
+        val intent = Intent(this, OngoingNotificationService::class.java).apply {
+            action = ACTION_REFRESH
+        }
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(this, REPOST_REQUEST_CODE, intent, flags)
+        } else {
+            PendingIntent.getService(this, REPOST_REQUEST_CODE, intent, flags)
         }
     }
 

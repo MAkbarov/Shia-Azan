@@ -33,7 +33,17 @@ data class AppSettings(
     
     // Hesablama Metodu
     val calculationMethod: CalculationMethod = CalculationMethod.LEVA_QUM
-)
+) {
+    /** Seçilmiş namaz üçün bildiriş/azan aktivdirmi. */
+    fun isNotificationEnabled(type: PrayerType): Boolean = when (type) {
+        PrayerType.FAJR -> fajrNotificationEnabled
+        PrayerType.DHUHR -> dhuhrNotificationEnabled
+        PrayerType.ASR -> asrNotificationEnabled
+        PrayerType.MAGHRIB -> maghribNotificationEnabled
+        PrayerType.ISHA -> ishaNotificationEnabled
+        PrayerType.SUNRISE -> false
+    }
+}
 
 /**
  * Hesablama metodları

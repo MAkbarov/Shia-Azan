@@ -10,7 +10,7 @@
 
 [![XIV Azan APK yüklə](https://img.shields.io/badge/XIV_Azan-Son_APK-21C4C3?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MAkbarov/Shia-Azan/releases/latest/download/XIV-Azan.apk)
 
-**Son versiya / Latest:** v1.0.3
+**Son versiya / Latest:** v1.0.4
 
 **AZ:** Ən son APK-ni birbaşa GitHub buraxılışından yükləmək üçün yuxarıdakı düyməyə toxunun. Bu link həmişə ən son versiyaya yönləndirir. Android quraşdırma zamanı brauzer üçün “Naməlum tətbiqləri quraşdır” icazəsi istəyə bilər. Tətbiq quraşdırıldıqdan sonra yeniləmələr avtomatik yoxlanılır və Parametrlər → Tətbiq Yeniləməsi bölməsindən idarə oluna bilər.
 
