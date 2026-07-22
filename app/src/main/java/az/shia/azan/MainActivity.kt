@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import az.shia.azan.audio.AzanPlayer
 import az.shia.azan.data.PrayerTime
+import az.shia.azan.data.PrayerType
 import az.shia.azan.location.LocationHelper
 import az.shia.azan.notification.AlarmScheduler
 import az.shia.azan.service.OngoingNotificationService
@@ -191,6 +192,19 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val justUpdatedVersion by settingsViewModel.justUpdatedVersion.collectAsState()
+                var previewingSound by remember { mutableStateOf<az.shia.azan.data.AzanSound?>(null) }
+
+                // Preview bitəndə (və ya dayandırılanda) play ikonlarını sıfırla.
+                LaunchedEffect(isPlaying) {
+                    if (!isPlaying) previewingSound = null
+                }
+                // Parametrlər ekranından çıxdıqda dinlənən azanı dayandır.
+                LaunchedEffect(currentScreen) {
+                    if (currentScreen != AppScreen.SETTINGS && previewingSound != null) {
+                        azanPlayer.stop()
+                        previewingSound = null
+                    }
+                }
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -222,6 +236,19 @@ class MainActivity : ComponentActivity() {
                                 updateState = updateState,
                                 onPrayerNotificationToggle = settingsViewModel::togglePrayerNotification,
                                 onAzanSoundChange = settingsViewModel::changeAzanSound,
+                                previewingSound = previewingSound,
+                                onPreviewAzan = { sound ->
+                                    azanPlayer.playAzan(
+                                        prayerType = PrayerType.DHUHR,
+                                        sound = sound,
+                                        volume = settings.azanVolume
+                                    )
+                                    previewingSound = sound
+                                },
+                                onStopPreview = {
+                                    azanPlayer.stop()
+                                    previewingSound = null
+                                },
                                 onVolumeChange = settingsViewModel::changeVolume,
                                 onReminderToggle = settingsViewModel::toggleReminder,
                                 onReminderTimeChange = settingsViewModel::changeReminderTime,

@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -80,7 +82,10 @@ fun VolumeSliderItem(
 @Composable
 fun AzanSoundSelectionDialog(
     currentSound: AzanSound,
+    previewingSound: AzanSound?,
     onSelect: (AzanSound) -> Unit,
+    onPreview: (AzanSound) -> Unit,
+    onStopPreview: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -114,7 +119,11 @@ fun AzanSoundSelectionDialog(
                     AzanSoundItem(
                         sound = sound,
                         isSelected = sound == currentSound,
-                        onSelect = { onSelect(sound) }
+                        isPreviewing = sound == previewingSound,
+                        onSelect = { onSelect(sound) },
+                        onPreviewToggle = {
+                            if (sound == previewingSound) onStopPreview() else onPreview(sound)
+                        }
                     )
                     
                     if (sound != AzanSound.entries.last()) {
@@ -142,16 +151,28 @@ fun AzanSoundSelectionDialog(
 fun AzanSoundItem(
     sound: AzanSound,
     isSelected: Boolean,
-    onSelect: () -> Unit
+    isPreviewing: Boolean,
+    onSelect: () -> Unit,
+    onPreviewToggle: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSelect() }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // Seçmədən öncə azanı dinləmək üçün play/stop düyməsi.
+        IconButton(onClick = onPreviewToggle) {
+            Icon(
+                imageVector = if (isPreviewing) Icons.Default.Stop else Icons.Default.PlayArrow,
+                contentDescription = if (isPreviewing) "Dayandır" else "Dinlə",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
         Text(
             text = sound.displayName,
             style = MaterialTheme.typography.bodyLarge,
@@ -160,9 +181,19 @@ fun AzanSoundItem(
                 MaterialTheme.colorScheme.primary
             } else {
                 MaterialTheme.colorScheme.onSurface
-            }
+            },
+            modifier = Modifier.weight(1f)
         )
-        
+
+        if (isPreviewing) {
+            Text(
+                text = "oxunur…",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
+
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.Check,

@@ -50,6 +50,9 @@ fun SettingsScreen(
     updateState: UpdateUiState,
     onPrayerNotificationToggle: (PrayerType, Boolean) -> Unit,
     onAzanSoundChange: (AzanSound) -> Unit,
+    previewingSound: AzanSound?,
+    onPreviewAzan: (AzanSound) -> Unit,
+    onStopPreview: () -> Unit,
     onVolumeChange: (Float) -> Unit,
     onReminderToggle: (Boolean) -> Unit,
     onReminderTimeChange: (Int) -> Unit,
@@ -327,11 +330,18 @@ fun SettingsScreen(
     if (showAzanSoundDialog) {
         AzanSoundSelectionDialog(
             currentSound = settings.selectedAzanSound,
+            previewingSound = previewingSound,
             onSelect = {
+                onStopPreview()
                 onAzanSoundChange(it)
                 showAzanSoundDialog = false
             },
-            onDismiss = { showAzanSoundDialog = false }
+            onPreview = onPreviewAzan,
+            onStopPreview = onStopPreview,
+            onDismiss = {
+                onStopPreview()
+                showAzanSoundDialog = false
+            }
         )
     }
     
