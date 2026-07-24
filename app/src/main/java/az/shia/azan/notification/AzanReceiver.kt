@@ -71,14 +71,17 @@ class AzanReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val settings = PreferencesManager(appContext).settingsFlow.first()
-                if (!settings.isNotificationEnabled(prayerType)) {
+                if (settings.isNotificationEnabled(prayerType)) {
+                    NotificationHelper(appContext)
+                        .showPrayerNotification(prayerType, prayerName, prayerTime)
+                    startAzanService(appContext, prayerType.name, prayerName)
+                    Log.d(TAG, "Prayer notification shown and Azan started: $prayerName at $prayerTime")
+                } else {
                     Log.d(TAG, "Skipped disabled prayer: $prayerName")
-                    return@launch
                 }
-                NotificationHelper(appContext)
-                    .showPrayerNotification(prayerType, prayerName, prayerTime)
-                startAzanService(appContext, prayerType.name, prayerName)
-                Log.d(TAG, "Prayer notification shown and Azan started: $prayerName at $prayerTime")
+                // Bu namaz aktiv olsun-olmasın, növbəti namaz(lar) üçün alarmları
+                // həmişə yenilə ki, azan silsiləsi kəsilməsin (gün keçidi daxil).
+                runCatching { PrayerAlarmPlanner.reschedule(appContext) }
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling prayer time", e)
             } finally {

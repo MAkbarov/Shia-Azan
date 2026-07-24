@@ -33,8 +33,8 @@ object UpdateScheduler {
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .addTag(UpdateWorkNames.TAG)
             .build()
-        val periodic = PeriodicWorkRequestBuilder<UpdateCheckWorker>(12, TimeUnit.HOURS)
-            .setInitialDelay(12, TimeUnit.HOURS)
+        val periodic = PeriodicWorkRequestBuilder<UpdateCheckWorker>(6, TimeUnit.HOURS)
+            .setInitialDelay(6, TimeUnit.HOURS)
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .addTag(UpdateWorkNames.TAG)
@@ -48,7 +48,7 @@ object UpdateScheduler {
             )
             enqueueUniquePeriodicWork(
                 UpdateWorkNames.CHECK_PERIODIC,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 periodic
             )
         }

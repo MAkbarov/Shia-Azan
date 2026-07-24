@@ -32,19 +32,26 @@ class OngoingNotificationBootReceiver : BroadcastReceiver() {
         )
         if (intent.action !in acceptedActions) return
 
+        val action = intent.action
         val pendingResult = goAsync()
+        val appContext = context.applicationContext
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val settings = PreferencesManager(context.applicationContext)
-                    .settingsFlow
-                    .first()
+                // Azan hər zaman işləsin: reboot, paket yenilənməsi, tarix/saat/timezone
+                // dəyişməsində alarmları yenidən qur. Bu, daimi bildiriş statusundan
+                // asılı deyil — azan seçilmiş namaz vaxtlarında mütləq oxunmalıdır.
+                if (action != ACTION_PRAYER_STATE_CHANGED) {
+                    runCatching { PrayerAlarmPlanner.reschedule(appContext) }
+                }
+
+                val settings = PreferencesManager(appContext).settingsFlow.first()
                 if (settings.ongoingNotificationEnabled) {
-                    if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
-                        intent.action == Intent.ACTION_MY_PACKAGE_REPLACED
+                    if (action == Intent.ACTION_BOOT_COMPLETED ||
+                        action == Intent.ACTION_MY_PACKAGE_REPLACED
                     ) {
-                        OngoingNotificationService.startService(context.applicationContext)
+                        OngoingNotificationService.startService(appContext)
                     } else {
-                        OngoingNotificationService.refresh(context.applicationContext)
+                        OngoingNotificationService.refresh(appContext)
                     }
                 }
             } finally {
