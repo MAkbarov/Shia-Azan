@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -46,6 +47,9 @@ class PreferencesManager(private val context: Context) {
 
         // Yenilənmədən sonra "tətbiq yeniləndi" toast-ını göstərmək üçün
         val LAST_SEEN_VERSION_CODE = intPreferencesKey("last_seen_version_code")
+
+        // Azanın təkrar oxunmasının qarşısını almaq üçün "yyyyMMdd-TYPE" markeri
+        val LAST_HANDLED_PRAYER = stringPreferencesKey("last_handled_prayer")
         
         // Daimi Bildiriş
         val ONGOING_NOTIFICATION = booleanPreferencesKey("ongoing_notification")
@@ -190,6 +194,16 @@ class PreferencesManager(private val context: Context) {
     suspend fun setLastSeenVersionCode(code: Int) {
         context.dataStore.edit { preferences ->
             preferences[LAST_SEEN_VERSION_CODE] = code
+        }
+    }
+
+    /** Sonuncu emal edilmiş namaz markeri ("yyyyMMdd-TYPE"). */
+    suspend fun getLastHandledPrayer(): String? =
+        context.dataStore.data.map { it[LAST_HANDLED_PRAYER] }.first()
+
+    suspend fun setLastHandledPrayer(marker: String) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_HANDLED_PRAYER] = marker
         }
     }
     

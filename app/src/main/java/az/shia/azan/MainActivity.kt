@@ -51,6 +51,7 @@ import az.shia.azan.data.PrayerTime
 import az.shia.azan.data.PrayerType
 import az.shia.azan.location.LocationHelper
 import az.shia.azan.notification.AlarmScheduler
+import az.shia.azan.notification.PrayerWatchdog
 import az.shia.azan.service.OngoingNotificationService
 import az.shia.azan.ui.components.AzanPlayerDialog
 import az.shia.azan.ui.screens.HomeScreen
@@ -254,6 +255,9 @@ class MainActivity : ComponentActivity() {
                         OngoingNotificationService.stopService(this@MainActivity)
                     }
                 }
+
+                // Tətbiq açılanda alarm/vidcet vəziyyətini dərhal bərpa et.
+                LaunchedEffect(Unit) { PrayerWatchdog.runNow(this@MainActivity) }
                 LaunchedEffect(settings.azanVolume) {
                     azanPlayer.setVolume(settings.azanVolume)
                 }

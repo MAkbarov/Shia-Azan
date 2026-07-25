@@ -54,6 +54,8 @@ class AlarmScheduler(private val context: Context) {
             putExtra(AzanReceiver.EXTRA_PRAYER_TYPE, prayer.type.name)
             putExtra(AzanReceiver.EXTRA_PRAYER_NAME, prayer.name)
             putExtra(AzanReceiver.EXTRA_PRAYER_TIME, TimeFormatter.formatTime(prayer.time))
+            // Gecikmə/dedupe hesabı üçün planlanan dəqiq vaxt.
+            putExtra(AzanReceiver.EXTRA_SCHEDULED_AT, prayer.time.timeInMillis)
         }
         
         val pendingIntent = PendingIntent.getBroadcast(

@@ -42,6 +42,8 @@ class OngoingNotificationBootReceiver : BroadcastReceiver() {
                 // asılı deyil — azan seçilmiş namaz vaxtlarında mütləq oxunmalıdır.
                 if (action != ACTION_PRAYER_STATE_CHANGED) {
                     runCatching { PrayerAlarmPlanner.reschedule(appContext) }
+                    // Boot-dan sonra watchdog-u da bərpa et (OEM onu da təmizləyir).
+                    runCatching { PrayerWatchdog.schedule(appContext) }
                 }
 
                 val settings = PreferencesManager(appContext).settingsFlow.first()

@@ -58,6 +58,8 @@ class OngoingNotificationService : Service() {
         const val ACTION_REFRESH = "az.shia.azan.action.REFRESH_PRAYER_TIMES"
         private const val REFRESH_REQUEST_CODE = 7301
         private const val REPOST_REQUEST_CODE = 7302
+        private const val KEEP_ALIVE_REQUEST_CODE = 7303
+        private const val KEEP_ALIVE_INTERVAL_MILLIS = 15 * 60 * 1000L
 
         fun startService(context: Context) {
             startService(context, null)
@@ -145,6 +147,29 @@ class OngoingNotificationService : Service() {
         val snapshot = calculateSnapshot(settings, location)
         startForeground(NOTIFICATION_ID, createNotification(snapshot))
         scheduleBoundaryRefresh(snapshot.nextPrayer.time.timeInMillis + 1_000L)
+        // OEM servisi öldürsə, keepalive alarmı onu 15 dəqiqə içində bərpa edir.
+        scheduleKeepAlive()
+    }
+
+    /** Servis öldürüldükdə vidceti bərpa etmək üçün təkrarlanan alarm. */
+    private fun scheduleKeepAlive() {
+        val triggerAt = System.currentTimeMillis() + KEEP_ALIVE_INTERVAL_MILLIS
+        val intent = Intent(this, OngoingNotificationService::class.java).apply {
+            action = ACTION_REFRESH
+        }
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            PendingIntent.getForegroundService(this, KEEP_ALIVE_REQUEST_CODE, intent, flags)
+        } else {
+            PendingIntent.getService(this, KEEP_ALIVE_REQUEST_CODE, intent, flags)
+        }
+        runCatching {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerAt,
+                pendingIntent
+            )
+        }
     }
 
     private fun calculateSnapshot(

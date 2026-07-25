@@ -24,6 +24,7 @@ class AzanReceiver : BroadcastReceiver() {
         const val EXTRA_PRAYER_TYPE = "prayer_type"
         const val EXTRA_PRAYER_NAME = "prayer_name"
         const val EXTRA_PRAYER_TIME = "prayer_time"
+        const val EXTRA_SCHEDULED_AT = "scheduled_at"
         
         private const val TAG = "AzanReceiver"
     }
@@ -65,22 +66,23 @@ class AzanReceiver : BroadcastReceiver() {
             }
         )
 
-        // Parametrlərdə bu namaz üçün bildiriş söndürülübsə, nə bildiriş, nə də azan.
+        val scheduledAt = intent.getLongExtra(EXTRA_SCHEDULED_AT, 0L)
+            .takeIf { it > 0L }
+
         val pendingResult = goAsync()
         val appContext = context.applicationContext
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val settings = PreferencesManager(appContext).settingsFlow.first()
-                if (settings.isNotificationEnabled(prayerType)) {
-                    NotificationHelper(appContext)
-                        .showPrayerNotification(prayerType, prayerName, prayerTime)
-                    startAzanService(appContext, prayerType.name, prayerName)
-                    Log.d(TAG, "Prayer notification shown and Azan started: $prayerName at $prayerTime")
-                } else {
-                    Log.d(TAG, "Skipped disabled prayer: $prayerName")
-                }
-                // Bu namaz aktiv olsun-olmasın, növbəti namaz(lar) üçün alarmları
-                // həmişə yenilə ki, azan silsiləsi kəsilməsin (gün keçidi daxil).
+                // Dedupe + gecikmə qoruması PrayerDispatcher-dədir.
+                PrayerDispatcher.onPrayerAlarm(
+                    context = appContext,
+                    prayerType = prayerType,
+                    prayerName = prayerName,
+                    prayerTimeText = prayerTime,
+                    scheduledAtMillis = scheduledAt
+                )
+                // Növbəti namaz(lar) üçün alarmları həmişə yenilə ki, azan
+                // silsiləsi kəsilməsin (gün keçidi daxil).
                 runCatching { PrayerAlarmPlanner.reschedule(appContext) }
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling prayer time", e)
