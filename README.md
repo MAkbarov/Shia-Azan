@@ -10,13 +10,21 @@
 
 [![XIV Azan APK yüklə](https://img.shields.io/badge/XIV_Azan-Son_APK-21C4C3?style=for-the-badge&logo=android&logoColor=white)](https://github.com/MAkbarov/Shia-Azan/releases/latest/download/XIV-Azan.apk)
 
-**Son versiya / Latest:** v1.0.6
+**Son versiya / Latest:** v1.1.0
 
 **AZ:** Ən son APK-ni birbaşa GitHub buraxılışından yükləmək üçün yuxarıdakı düyməyə toxunun. Bu link həmişə ən son versiyaya yönləndirir. Android quraşdırma zamanı brauzer üçün “Naməlum tətbiqləri quraşdır” icazəsi istəyə bilər. Tətbiq quraşdırıldıqdan sonra yeniləmələr avtomatik yoxlanılır və Parametrlər → Tətbiq Yeniləməsi bölməsindən idarə oluna bilər.
 
 **EN:** Tap the button above to download the latest APK directly from the GitHub release. This link always points to the newest version. Android may ask you to allow “Install unknown apps” during installation. After installing, updates are checked automatically and can be managed from Settings → App Update.
 
 [Azərbaycan dili](#azərbaycan-dili) · [English](#english)
+
+## Dəyişikliklər / Changelog
+
+### v1.1.0
+
+**AZ:** Tam yenilənmiş müasir və premium dizayn: yumşaq künclər, dairəvi vurğu ikonları və səliqəli kartlar. Parametrlərdən 6 mövzu rəngi seçmək olur; seçilən rəng bütün tətbiqə, status barına, daimi vidcetə və kilid ekranı bildirişinə tətbiq olunur. Avtomatik başlatma icazəsinə birbaşa keçid əlavə edildi. Arxa fonda avtomatik yeniləmə daha tez və etibarlı işləyir.
+
+**EN:** Fully refreshed modern, premium design with softer corners, circular accent icons and cleaner cards. Seven theme colors can be picked in Settings, and the selected color is applied across the app, the status bar, the persistent widget and the lock-screen notification. Added a direct shortcut to the manufacturer's auto-start permission. Background automatic updates now run more frequently and more reliably.
 
 ---
 
@@ -38,6 +46,8 @@ Tətbiqdə sabit cədvəl istifadə edilmir. Məkan və tarix dəyişdikdə vaxt
 - Azərbaycan şəhər və rayonları, eləcə də seçilmiş xarici Şiə mərkəzləri
 - Dəqiq alarm və namaz vaxtı bildirişləri
 - Status paneli və kilid ekranında daimi namaz bildirişi
+- Parametrlərdən seçilə bilən 6 vurğu rəngi (firuzəyi, dəniz mavisi, zümrüd yaşılı, bənövşəyi, qızılı, qızılgül)
+- Avtomatik başlatma icazəsinə birbaşa keçid
 - Miladi və Hicri-qəməri tarixin ana səhifədə yanaşı göstərilməsi
 - Hicri tarixin −7…+7 gün aralığında ay müşahidəsinə uyğun tənzimlənməsi
 - GitHub buraxılışlarından avtomatik yeniləmə yoxlaması və təhlükəsiz APK quraşdırması
@@ -149,6 +159,8 @@ The app does not rely on a fixed timetable. Prayer times are recalculated when t
 - Azerbaijani cities and districts, plus selected international Shia centers
 - Exact alarms and prayer-time notifications
 - Persistent prayer information in the status area and on the lock screen
+- Six selectable accent colors in Settings (turquoise, ocean, emerald green, royal, amber, rose)
+- Direct shortcut to the manufacturer's auto-start permission screen
 - Gregorian and Hijri (lunar) dates shown side by side on the home screen
 - Hijri date adjustable within −7…+7 days for local moon sighting
 - Automatic update checks from GitHub releases with verified APK installation

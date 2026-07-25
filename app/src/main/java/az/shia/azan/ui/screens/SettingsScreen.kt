@@ -1,13 +1,16 @@
 package az.shia.azan.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ChevronRight
@@ -16,7 +19,9 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Timer
@@ -24,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.shia.azan.BuildConfig
@@ -31,6 +37,7 @@ import az.shia.azan.data.AppSettings
 import az.shia.azan.data.AzanSound
 import az.shia.azan.data.CalculationMethod
 import az.shia.azan.data.PrayerType
+import az.shia.azan.data.ThemeAccent
 import az.shia.azan.ui.components.AzanSoundSelectionDialog
 import az.shia.azan.ui.components.CalculationMethodDialog
 import az.shia.azan.ui.components.ReminderTimeDialog
@@ -59,6 +66,8 @@ fun SettingsScreen(
     on24HourToggle: (Boolean) -> Unit,
     onHijriToggle: (Boolean) -> Unit,
     onHijriOffsetChange: (Int) -> Unit,
+    onThemeAccentChange: (ThemeAccent) -> Unit,
+    onAutoStartClick: () -> Unit,
     onOngoingNotificationToggle: (Boolean) -> Unit,
     onAutomaticUpdatesToggle: (Boolean) -> Unit,
     onCheckForUpdates: () -> Unit,
@@ -72,16 +81,7 @@ fun SettingsScreen(
     var showReminderTimeDialog by remember { mutableStateOf(false) }
     var showCalcMethodDialog by remember { mutableStateOf(false) }
     
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val appBarGradient = remember(isDark) {
-        androidx.compose.ui.graphics.Brush.horizontalGradient(
-            colors = if (isDark) {
-                listOf(az.shia.azan.ui.theme.GradientDarkStart, az.shia.azan.ui.theme.GradientDarkEnd)
-            } else {
-                listOf(az.shia.azan.ui.theme.GradientStart, az.shia.azan.ui.theme.GradientEnd)
-            }
-        )
-    }
+    val appBarGradient = az.shia.azan.ui.theme.rememberAppBarBrush()
     // Hicri hesablaması ICU calendar yaradır; scroll zamanı təkrar allokasiyanın
     // qarşısını almaq üçün yalnız tarix/offset dəyişəndə hesabla.
     val hijriFormatted = remember(currentTime, settings.hijriOffsetDays) {
@@ -234,6 +234,13 @@ fun SettingsScreen(
             }
             
             item {
+                AccentColorPicker(
+                    selected = settings.themeAccent,
+                    onSelect = onThemeAccentChange
+                )
+            }
+
+            item {
                 SwitchSettingsItem(
                     icon = Icons.Default.CalendarToday,
                     title = "Hicri Tarix",
@@ -293,6 +300,15 @@ fun SettingsScreen(
                         "Azanlar üçün deaktiv edin"
                     },
                     onClick = onBatteryOptimizationClick
+                )
+            }
+
+            item {
+                SettingsItem(
+                    icon = Icons.Default.RocketLaunch,
+                    title = "Avtomatik başlatma",
+                    subtitle = "Telefon yenidən açıldıqda azan işləsin deyə icazə verin",
+                    onClick = onAutoStartClick
                 )
             }
 
@@ -406,7 +422,8 @@ fun PrayerNotificationItem(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -441,7 +458,8 @@ fun SettingsItem(
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -449,23 +467,18 @@ fun SettingsItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
+            AccentIconBadge(icon)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Icon(
@@ -491,7 +504,8 @@ fun SwitchSettingsItem(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -499,23 +513,18 @@ fun SwitchSettingsItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
+            AccentIconBadge(icon)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Switch(
@@ -540,7 +549,8 @@ private fun HijriDateAdjustmentItem(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -617,7 +627,8 @@ private fun UpdateSettingsCard(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -678,5 +689,106 @@ private fun UpdateSettingsCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AccentColorPicker(
+    selected: ThemeAccent,
+    onSelect: (ThemeAccent) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Palette,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Tətbiq rəngi",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = selected.displayName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ThemeAccent.entries.forEach { accent ->
+                    val isSelected = accent == selected
+                    val swatch = androidx.compose.ui.graphics.Color(accent.previewColor)
+                    Box(
+                        modifier = Modifier
+                            // Sabit kvadrat ölçü: bütün rənglər tam dairəvi qalır,
+                            // sonuncu rəng sıxılmır və ellipsə çevrilmir.
+                            .size(40.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(swatch)
+                            .then(
+                                if (isSelected) {
+                                    Modifier.border(
+                                        width = 3.dp,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        shape = androidx.compose.foundation.shape.CircleShape
+                                    )
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable { onSelect(accent) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = accent.displayName,
+                                tint = androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Premium görünüş üçün vurğu rəngli dairəvi ikon fonu. */
+@Composable
+private fun AccentIconBadge(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Box(
+        modifier = Modifier
+            .size(42.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+        )
     }
 }

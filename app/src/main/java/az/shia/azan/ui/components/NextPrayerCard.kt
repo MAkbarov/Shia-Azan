@@ -57,25 +57,28 @@ fun NextPrayerCard(
         label = "offsetX"
     )
     
-    val gradientBrush = Brush.linearGradient(
-        colors = if (isDark) {
-            listOf(
-                GradientDarkStart, 
-                GradientDarkMiddle, 
-                GradientDarkEnd,
-                GradientDarkMiddle,
-                GradientDarkStart
-            )
-        } else {
-            listOf(
-                GradientStart, 
-                GradientMiddle, 
-                GradientEnd,
-                GradientMiddle,
-                GradientStart
-            )
-        }
-    )
+    val scheme = MaterialTheme.colorScheme
+    val gradientBrush = remember(scheme.primary, scheme.tertiary, isDark) {
+        Brush.linearGradient(
+            colors = if (isDark) {
+                listOf(
+                    scheme.surface,
+                    scheme.surfaceVariant,
+                    scheme.primary.copy(alpha = 0.45f),
+                    scheme.surfaceVariant,
+                    scheme.surface
+                )
+            } else {
+                listOf(
+                    scheme.primary,
+                    scheme.secondary,
+                    scheme.tertiary,
+                    scheme.secondary,
+                    scheme.primary
+                )
+            }
+        )
+    }
     
     // Pulse animasiyası
     val scale by infiniteTransition.animateFloat(

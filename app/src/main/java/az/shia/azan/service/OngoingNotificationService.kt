@@ -135,6 +135,12 @@ class OngoingNotificationService : Service() {
         super.onDestroy()
     }
 
+    /** Seçilmiş mövzu rəngi (bildiriş və RemoteViews vurğuları üçün). */
+    private fun accentColor(): Int =
+        (currentSettings?.themeAccent ?: az.shia.azan.data.ThemeAccent.TURQUOISE)
+            .previewColor
+            .toInt()
+
     private fun refreshFromCurrentState() {
         val settings = currentSettings
         val location = currentLocation
@@ -227,7 +233,8 @@ class OngoingNotificationService : Service() {
             .setContentTitle("XIV Azan • ${snapshot.prayerTimes.locationName}")
             .setContentText("$prefix: ${snapshot.nextPrayer.name} $nextTime • $remaining qalıb")
             .setSmallIcon(R.drawable.ic_notification)
-            .setColor(0xFF22BFC1.toInt())
+            // Yalnız ikon/vurğu rəngi mövzuya uyğunlaşır; arxa fon cihaz defoltudur.
+            .setColor(accentColor())
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setOngoing(true)
@@ -262,6 +269,9 @@ class OngoingNotificationService : Service() {
                 R.id.notification_next_time,
                 TimeFormatter.formatTime(snapshot.nextPrayer.time)
             )
+            // Vurğu rəngi seçilən mövzuya uyğun dəyişir.
+            setTextColor(R.id.notification_next_time, accentColor())
+            setTextColor(R.id.notification_next_name, accentColor())
         }
     }
 
@@ -280,6 +290,8 @@ class OngoingNotificationService : Service() {
                 R.id.notification_expanded_next,
                 "$prefix ${snapshot.nextPrayer.name} ${TimeFormatter.formatTime(snapshot.nextPrayer.time)} • $remaining"
             )
+            setTextColor(R.id.notification_expanded_next, accentColor())
+            setTextColor(R.id.notification_expanded_title, accentColor())
             setTextViewText(R.id.time_fajr, TimeFormatter.formatTime(snapshot.prayerTimes.fajr))
             setTextViewText(R.id.time_dhuhr, TimeFormatter.formatTime(snapshot.prayerTimes.dhuhr))
             setTextViewText(R.id.time_asr, TimeFormatter.formatTime(snapshot.prayerTimes.asr))

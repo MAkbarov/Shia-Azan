@@ -37,13 +37,7 @@ fun LocationSelectionScreen(
     }
 
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val appBarGradient = androidx.compose.ui.graphics.Brush.horizontalGradient(
-        colors = if (isDark) {
-            listOf(az.shia.azan.ui.theme.GradientDarkStart, az.shia.azan.ui.theme.GradientDarkEnd)
-        } else {
-            listOf(az.shia.azan.ui.theme.GradientStart, az.shia.azan.ui.theme.GradientEnd)
-        }
-    )
+    val appBarGradient = az.shia.azan.ui.theme.rememberAppBarBrush()
 
     Scaffold(
         topBar = {

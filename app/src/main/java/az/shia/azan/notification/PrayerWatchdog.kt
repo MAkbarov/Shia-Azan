@@ -74,6 +74,15 @@ class PrayerWatchdogWorker(
         // Alarm işləməyibsə qaçırılmış namazı emal et.
         runCatching { PrayerDispatcher.catchUpMissedPrayer(applicationContext) }
 
+        // Avtomatik yeniləmə aktivdirsə, yoxlamanı da bu dövrədə tetiklə:
+        // OEM cihazlarda periodik update işi tək-tək tormozlana bilir.
+        runCatching {
+            val settings = PreferencesManager(applicationContext).settingsFlow.first()
+            if (settings.automaticUpdatesEnabled) {
+                az.shia.azan.update.UpdateScheduler.checkNow(applicationContext)
+            }
+        }
+
         return Result.success()
     }
 }

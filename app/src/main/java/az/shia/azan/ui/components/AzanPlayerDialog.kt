@@ -39,7 +39,7 @@ fun AzanPlayerDialog(
     onDismiss: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val primaryColor = if (isDark) GradientDarkStart else GradientStart
+    val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
     
     Dialog(onDismissRequest = onDismiss) {
         Card(

@@ -23,6 +23,7 @@ data class AppSettings(
     val use24HourFormat: Boolean = true,
     val showHijriDate: Boolean = true,
     val hijriOffsetDays: Int = 0,
+    val themeAccent: ThemeAccent = ThemeAccent.TURQUOISE,
     
     // Arxa fon
     val batteryOptimizationDisabled: Boolean = false,

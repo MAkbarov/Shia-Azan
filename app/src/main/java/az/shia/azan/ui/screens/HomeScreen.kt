@@ -62,13 +62,7 @@ fun HomeScreen(
     }
     
     val isDark = isSystemInDarkTheme()
-    val appBarGradient = Brush.horizontalGradient(
-        colors = if (isDark) {
-            listOf(GradientDarkStart, GradientDarkEnd)
-        } else {
-            listOf(GradientStart, GradientEnd)
-        }
-    )
+    val appBarGradient = az.shia.azan.ui.theme.rememberAppBarBrush()
 
     Scaffold(
         topBar = {

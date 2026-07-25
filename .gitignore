@@ -18,6 +18,11 @@ out/
 .idea/
 *.log
 
+# Gradle build outputs (IDE-də "changes" siyahısını doldurmasın)
+build/
+app/build/
+.kotlin/
+
 # Public download artifact; generated APK files elsewhere remain ignored.
 !download/
 !download/*.apk

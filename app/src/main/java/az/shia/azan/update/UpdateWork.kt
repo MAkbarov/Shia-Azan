@@ -8,6 +8,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -31,10 +32,12 @@ object UpdateScheduler {
         val immediate = OneTimeWorkRequestBuilder<UpdateCheckWorker>()
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+            // Doze/OEM gecikmələrini keçmək üçün dərhal işlə.
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .addTag(UpdateWorkNames.TAG)
             .build()
-        val periodic = PeriodicWorkRequestBuilder<UpdateCheckWorker>(6, TimeUnit.HOURS)
-            .setInitialDelay(6, TimeUnit.HOURS)
+        val periodic = PeriodicWorkRequestBuilder<UpdateCheckWorker>(2, TimeUnit.HOURS)
+            .setInitialDelay(30, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .addTag(UpdateWorkNames.TAG)
@@ -52,6 +55,23 @@ object UpdateScheduler {
                 periodic
             )
         }
+    }
+
+    /** Watchdog/aktivləşdirmə kimi hallarda dərhal bir yoxlama işlət. */
+    fun checkNow(context: Context) {
+        val request = OneTimeWorkRequestBuilder<UpdateCheckWorker>()
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .addTag(UpdateWorkNames.TAG)
+            .build()
+        WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
+            UpdateWorkNames.CHECK_NOW,
+            ExistingWorkPolicy.REPLACE,
+            request
+        )
     }
 
     fun cancel(context: Context) {

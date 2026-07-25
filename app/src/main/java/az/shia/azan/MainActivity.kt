@@ -187,9 +187,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Bəzi OEM sistemləri XML statusBarColor-u öz accent rəngi ilə əvəz edir.
-        // Loqonun/toolbar-ın başlanğıc firuzəyi rəngini pəncərəyə birbaşa tətbiq et.
-        window.statusBarColor = android.graphics.Color.rgb(33, 196, 195)
+        // Status bar rəngi seçilmiş mövzu rənginə görə aşağıda dinamik təyin olunur.
         androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
             .isAppearanceLightStatusBars = false
 
@@ -207,7 +205,14 @@ class MainActivity : ComponentActivity() {
         checkAndRequestPermissions()
 
         setContent {
-            ShiaAzanTheme {
+            val themeSettings by settingsViewModel.settings.collectAsState()
+
+            // Seçilən mövzu rəngi status barına da tətbiq olunur.
+            LaunchedEffect(themeSettings.themeAccent) {
+                window.statusBarColor = themeSettings.themeAccent.previewColor.toInt()
+            }
+
+            ShiaAzanTheme(accent = themeSettings.themeAccent) {
                 var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
                 var showPlayerDialog by remember { mutableStateOf(false) }
                 var selectedPrayer by remember { mutableStateOf<PrayerTime?>(null) }
@@ -334,6 +339,10 @@ class MainActivity : ComponentActivity() {
                                 on24HourToggle = settingsViewModel::toggle24HourFormat,
                                 onHijriToggle = settingsViewModel::toggleHijriDate,
                                 onHijriOffsetChange = settingsViewModel::changeHijriOffset,
+                                onThemeAccentChange = settingsViewModel::changeThemeAccent,
+                                onAutoStartClick = {
+                                    az.shia.azan.utils.AutoStartHelper.open(this@MainActivity)
+                                },
                                 onOngoingNotificationToggle = settingsViewModel::toggleOngoingNotification,
                                 onAutomaticUpdatesToggle = settingsViewModel::toggleAutomaticUpdates,
                                 onCheckForUpdates = settingsViewModel::checkForUpdates,

@@ -1,4 +1,4 @@
-package az.shia.azan.ui.theme
+﻿package az.shia.azan.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -11,8 +11,8 @@ val Typography = Typography(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = 0.sp
+        lineHeight = 62.sp,
+        letterSpacing = (-1.5).sp
     ),
     displayMedium = TextStyle(
         fontFamily = FontFamily.Default,
@@ -113,3 +113,4 @@ val Typography = Typography(
         letterSpacing = 0.5.sp
     )
 )
+

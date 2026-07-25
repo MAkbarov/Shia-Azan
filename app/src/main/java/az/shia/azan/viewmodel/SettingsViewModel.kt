@@ -178,6 +178,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { preferencesManager.setHijriOffsetDays(offsetDays) }
     }
 
+    fun changeThemeAccent(accent: az.shia.azan.data.ThemeAccent) {
+        viewModelScope.launch { preferencesManager.setThemeAccent(accent) }
+    }
+
     fun setBatteryOptimizationDisabled(disabled: Boolean) {
         viewModelScope.launch { preferencesManager.setBatteryOptimizationDisabled(disabled) }
     }

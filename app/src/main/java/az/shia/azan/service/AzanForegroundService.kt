@@ -36,6 +36,9 @@ class AzanForegroundService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var audioManager: AudioManager? = null
 
+    /** Seçilmiş mövzu rəngi; bildiriş vurğusu üçün. */
+    private var accentColor: Int = az.shia.azan.data.ThemeAccent.TURQUOISE.previewColor.toInt()
+
     companion object {
         const val CHANNEL_ID = "azan_playback_channel"
         const val NOTIFICATION_ID = 2001
@@ -70,6 +73,7 @@ class AzanForegroundService : Service() {
                         try {
                             val prayerType = PrayerType.valueOf(prayerTypeName)
                             val settings = preferencesManager.settingsFlow.first()
+                            accentColor = settings.themeAccent.previewColor.toInt()
                             azanPlayer.playAzan(
                                 prayerType = prayerType,
                                 sound = settings.selectedAzanSound,
@@ -138,6 +142,7 @@ class AzanForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setColor(accentColor)
             .setContentTitle("🕌 $prayerName Azanı")
             .setContentText("Azan oxunur...")
             .setSmallIcon(R.drawable.ic_notification)

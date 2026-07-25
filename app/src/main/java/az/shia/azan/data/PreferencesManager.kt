@@ -50,6 +50,9 @@ class PreferencesManager(private val context: Context) {
 
         // Azanın təkrar oxunmasının qarşısını almaq üçün "yyyyMMdd-TYPE" markeri
         val LAST_HANDLED_PRAYER = stringPreferencesKey("last_handled_prayer")
+
+        // Görünüş: istifadəçinin seçdiyi vurğu rəngi
+        val THEME_ACCENT = stringPreferencesKey("theme_accent")
         
         // Daimi Bildiriş
         val ONGOING_NOTIFICATION = booleanPreferencesKey("ongoing_notification")
@@ -89,6 +92,9 @@ class PreferencesManager(private val context: Context) {
             use24HourFormat = preferences[USE_24_HOUR] ?: true,
             showHijriDate = preferences[SHOW_HIJRI] ?: true,
             hijriOffsetDays = (preferences[HIJRI_OFFSET_DAYS] ?: 0).coerceIn(-7, 7),
+            themeAccent = preferences[THEME_ACCENT]?.let { stored ->
+                runCatching { ThemeAccent.valueOf(stored) }.getOrNull()
+            } ?: ThemeAccent.TURQUOISE,
             
             batteryOptimizationDisabled = preferences[BATTERY_OPT_DISABLED] ?: false,
             automaticUpdatesEnabled = preferences[AUTOMATIC_UPDATES] ?: true,
@@ -170,6 +176,13 @@ class PreferencesManager(private val context: Context) {
     suspend fun setShowHijriDate(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[SHOW_HIJRI] = enabled
+        }
+    }
+
+    /** Vurğu rəngini saxla. */
+    suspend fun setThemeAccent(accent: ThemeAccent) {
+        context.dataStore.edit { preferences ->
+            preferences[THEME_ACCENT] = accent.name
         }
     }
 
